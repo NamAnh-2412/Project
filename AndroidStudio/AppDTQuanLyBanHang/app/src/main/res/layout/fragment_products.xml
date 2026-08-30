@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/navy_deep"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/navy_elevated"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:navigationIconTint="@color/gold_accent"
+        app:title="@string/tab_products"
+        app:titleTextColor="@color/gold_accent" />
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabProductsSections"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/navy_elevated"
+        app:tabIndicatorColor="@color/gold_accent"
+        app:tabSelectedTextColor="@color/gold_accent"
+        app:tabTextColor="@color/text_secondary" />
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/containerProductsSections"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>

@@ -1,0 +1,10 @@
+.idea/
+**/.gradle/
+**/build/
+**/local.properties
+**/*.apk
+**/*.aab
+**/*.jks
+**/*.keystore
+**/QuanLyBanHang_key/
+.DS_Store

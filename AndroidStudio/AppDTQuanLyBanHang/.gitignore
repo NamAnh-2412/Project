@@ -1,0 +1,23 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+# Avoid opening `app/` as project root (wrong .idea); IDE config belongs at repo root only.
+app/.idea/
+*.apk
+*.aab
+*.jks
+*.keystore
+QuanLyBanHang_key/
+app/release/
