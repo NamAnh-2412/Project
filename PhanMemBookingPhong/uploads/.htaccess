@@ -1,0 +1,3 @@
+# Cho phép truy cập file trong thư mục uploads
+Options -Indexes
+

@@ -1,0 +1,492 @@
+/* ============================================
+   MICRO-INTERACTIONS.CSS
+   4 Micro-interactions chính:
+   1. Button Click Effects (Ripple + Scale)
+   2. Form Validation Feedback (Icons)
+   3. Toast Animations (Slide in/out)
+   4. Loading Button States (Shrink + Spinner)
+   ============================================ */
+
+/* ===== 1. BUTTON CLICK EFFECTS ===== */
+
+/* Button với ripple effect */
+.btn,
+button[type="submit"],
+button[type="button"],
+.main-link,
+a.btn {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Scale down khi click */
+.btn:active,
+button[type="submit"]:active,
+button[type="button"]:active,
+.main-link:active {
+  transform: scale(0.97);
+}
+
+/* Ripple effect */
+.btn::before,
+button[type="submit"]::before,
+button[type="button"]::before,
+.main-link::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* Ripple animation khi click */
+.btn.ripple::before,
+button[type="submit"].ripple::before,
+button[type="button"].ripple::before,
+.main-link.ripple::before {
+  width: 300px;
+  height: 300px;
+  opacity: 1;
+  transition: width 0.6s, height 0.6s, opacity 0.6s;
+}
+
+/* Bounce animation cho button success */
+@keyframes buttonSuccess {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.btn-success-animation {
+  animation: buttonSuccess 0.4s ease;
+}
+
+/* ===== 2. FORM VALIDATION FEEDBACK ===== */
+
+/* Form group với validation icons */
+.form-group,
+.form-input-wrapper {
+  position: relative;
+}
+
+/* Input wrapper cho icon positioning */
+.form-input-wrapper {
+  position: relative;
+}
+
+/* Validation icons */
+.form-input-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+/* Success icon (checkmark) */
+.form-input-wrapper.valid::after {
+  content: '✓';
+  color: #10b981;
+  font-weight: bold;
+  font-size: 16px;
+  opacity: 1;
+}
+
+/* Error icon (warning) */
+.form-input-wrapper.invalid::after {
+  content: '⚠';
+  color: #ef4444;
+  font-weight: bold;
+  font-size: 16px;
+  opacity: 1;
+}
+
+/* Input padding để tránh text bị che bởi icon */
+.form-input-wrapper.valid input,
+.form-input-wrapper.invalid input,
+.form-input-wrapper.valid textarea,
+.form-input-wrapper.invalid textarea,
+.form-input-wrapper.valid select,
+.form-input-wrapper.invalid select {
+  padding-right: 40px;
+}
+
+/* Shake animation khi error */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.form-input-wrapper.shake {
+  animation: shake 0.5s ease;
+}
+
+.form-input-wrapper.shake input,
+.form-input-wrapper.shake textarea,
+.form-input-wrapper.shake select {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Success animation */
+@keyframes successPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
+}
+
+.form-input-wrapper.valid.success-animation input,
+.form-input-wrapper.valid.success-animation textarea,
+.form-input-wrapper.valid.success-animation select {
+  animation: successPulse 0.6s ease;
+  border-color: #10b981 !important;
+}
+
+/* Border colors khi valid/invalid */
+.form-input-wrapper.valid input,
+.form-input-wrapper.valid textarea,
+.form-input-wrapper.valid select {
+  border-color: #10b981;
+}
+
+.form-input-wrapper.invalid input,
+.form-input-wrapper.invalid textarea,
+.form-input-wrapper.invalid select {
+  border-color: #ef4444;
+}
+
+/* ===== 3. TOAST ANIMATIONS ===== */
+
+/* Toast container */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+/* Toast item */
+.toast {
+  position: relative;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  min-width: 300px;
+  max-width: 400px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateX(400px);
+  animation: toastSlideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Slide in animation */
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(400px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Slide out animation */
+.toast.toast-slide-out {
+  animation: toastSlideOut 0.3s ease forwards;
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(400px);
+  }
+}
+
+/* Toast types */
+.toast-success {
+  border-left: 4px solid #10b981;
+}
+
+.toast-error {
+  border-left: 4px solid #ef4444;
+}
+
+.toast-warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.toast-info {
+  border-left: 4px solid #3b82f6;
+}
+
+/* Toast icon */
+.toast-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.toast-success .toast-icon {
+  color: #10b981;
+}
+
+.toast-error .toast-icon {
+  color: #ef4444;
+}
+
+.toast-warning .toast-icon {
+  color: #f59e0b;
+}
+
+.toast-info .toast-icon {
+  color: #3b82f6;
+}
+
+/* Toast content */
+.toast-content {
+  flex: 1;
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.toast-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.toast-message {
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* Toast close button */
+.toast-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* Toast progress bar (auto dismiss) */
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: currentColor;
+  opacity: 0.3;
+  animation: toastProgress linear forwards;
+}
+
+@keyframes toastProgress {
+  from { width: 100%; }
+  to { width: 0; }
+}
+
+.toast-success .toast-progress {
+  color: #10b981;
+}
+
+.toast-error .toast-progress {
+  color: #ef4444;
+}
+
+.toast-warning .toast-progress {
+  color: #f59e0b;
+}
+
+.toast-info .toast-progress {
+  color: #3b82f6;
+}
+
+/* ===== 4. LOADING BUTTON STATES ===== */
+
+/* Button với loading state */
+.btn-loading,
+button[type="submit"].loading,
+button.loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Spinner trong button */
+.btn-loading::after,
+button[type="submit"].loading::after,
+button.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: buttonSpinner 0.6s linear infinite;
+}
+
+@keyframes buttonSpinner {
+  to { transform: rotate(360deg); }
+}
+
+/* Shrink animation khi loading */
+@keyframes buttonShrink {
+  from {
+    padding-left: var(--btn-padding-x, 20px);
+    padding-right: var(--btn-padding-x, 20px);
+  }
+  to {
+    padding-left: 30px;
+    padding-right: 30px;
+  }
+}
+
+/* Apply shrink (optional - có thể không cần nếu đã có spinner) */
+.btn-loading.shrink,
+button[type="submit"].loading.shrink,
+button.loading.shrink {
+  animation: buttonShrink 0.3s ease forwards;
+}
+
+/* Success checkmark trong button */
+.btn-success::after,
+button[type="submit"].success::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: bold;
+  animation: checkmarkPop 0.4s ease;
+}
+
+@keyframes checkmarkPop {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Disable button khi loading */
+.btn-loading,
+button[type="submit"].loading,
+button.loading {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+/* ===== UTILITY CLASSES ===== */
+
+/* Ripple effect trigger */
+.ripple-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Smooth transitions */
+.smooth-transition {
+  transition: all 0.3s ease;
+}
+
+/* Focus visible (accessibility) */
+*:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .toast {
+    min-width: calc(100vw - 40px);
+    max-width: calc(100vw - 40px);
+  }
+
+  .toast-container {
+    left: 20px;
+    right: 20px;
+  }
+
+  .toast {
+    transform: translateY(-100px);
+    animation: toastSlideInMobile 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  }
+
+  @keyframes toastSlideInMobile {
+    from {
+      opacity: 0;
+      transform: translateY(-100px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .toast.toast-slide-out {
+    animation: toastSlideOutMobile 0.3s ease forwards;
+  }
+
+  @keyframes toastSlideOutMobile {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-100px);
+    }
+  }
+}
+

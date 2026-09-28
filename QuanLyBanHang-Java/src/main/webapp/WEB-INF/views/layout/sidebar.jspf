@@ -1,0 +1,67 @@
+<%@ page pageEncoding="UTF-8" contentType="text/html; charset=UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="_ctx" value="${pageContext.request.contextPath}"/>
+<aside class="sidebar">
+    <div class="sidebar-logo-section">
+        <div class="sidebar-logo-container">
+            <c:choose>
+                <c:when test="${not empty logoPath}">
+                    <img class="sidebar-logo-image" src="${_ctx}/${logoPath}" alt="${shopName}">
+                </c:when>
+                <c:otherwise>
+                    <div class="sidebar-logo-placeholder">
+                        <span class="sidebar-logo-initial">${shopLogoInitials}</span>
+                    </div>
+                </c:otherwise>
+            </c:choose>
+        </div>
+        <h2 class="sidebar-shop-name">${shopName}</h2>
+    </div>
+    <div class="sidebar-divider"></div>
+    <ul>
+        <li><a href="${_ctx}/home" class="icon-link"><span class="icon"><i class="fas fa-home"></i></span> Quản lý tổng</a></li>
+        <li><a href="${_ctx}/don-hang" class="icon-link"><span class="icon"><i class="fas fa-shopping-cart"></i></span> Đơn hàng</a></li>
+        <li class="menu-item has-submenu" id="spmenu">
+            <a href="#" class="icon-link" onclick="toggleSubMenu('sp-submenu');return false;">
+                <span class="icon"><i class="fas fa-box"></i></span> Sản phẩm
+                <span class="submenu-toggle"><i class="fas fa-chevron-down"></i></span>
+            </a>
+            <ul class="submenu" id="sp-submenu">
+                <li><a href="${_ctx}/san-pham/nguyen-lieu">Nguyên liệu</a></li>
+                <li><a href="${_ctx}/san-pham/thuc-don">Thực đơn</a></li>
+                <li><a href="${_ctx}/san-pham/nhom-lua-chon">Nhóm lựa chọn</a></li>
+                <li><a href="${_ctx}/san-pham">Sản phẩm</a></li>
+            </ul>
+        </li>
+        <li><a href="${_ctx}/khach-hang" class="icon-link"><span class="icon"><i class="fas fa-user-friends"></i></span> Khách hàng</a></li>
+        <li><a href="${_ctx}/nhan-vien" class="icon-link"><span class="icon"><i class="fas fa-user-tie"></i></span> Nhân viên</a></li>
+        <li><a href="${_ctx}/kho" class="icon-link"><span class="icon"><i class="fas fa-warehouse"></i></span> Kho hàng</a></li>
+        <li><a href="${_ctx}/nha-cung-cap" class="icon-link"><span class="icon"><i class="fas fa-truck"></i></span> Nhà cung cấp</a></li>
+        <li><a href="${_ctx}/bao-cao" class="icon-link"><span class="icon"><i class="fas fa-chart-line"></i></span> Báo cáo</a></li>
+        <li><a href="${_ctx}/caidat" class="icon-link"><span class="icon"><i class="fas fa-cog"></i></span> Cài đặt</a></li>
+        <li><a href="${_ctx}/doi-mat-khau" class="icon-link"><span class="icon"><i class="fas fa-key"></i></span> Đổi mật khẩu</a></li>
+        <li><a href="${_ctx}/logout" class="icon-link"><span class="icon"><i class="fas fa-sign-out-alt"></i></span> Đăng xuất</a></li>
+    </ul>
+    <div class="theme-toggle-wrapper">
+        <button type="button" class="theme-toggle" aria-label="Toggle dark mode" title="Chuyển chế độ tối/sáng">
+            <i class="fas fa-moon icon-moon"></i>
+            <i class="fas fa-sun icon-sun"></i>
+        </button>
+    </div>
+    <script>
+        function toggleSubMenu(id) {
+            var e = document.getElementById(id);
+            if (e) {
+                e.classList.toggle('active');
+            }
+        }
+    </script>
+    <style>
+        .sidebar { overflow-y: auto; scrollbar-width: thin; }
+        .submenu { max-height: 0; overflow: hidden; transition: max-height .3s; }
+        .submenu.active { max-height: 400px; }
+        .submenu li { padding-left: 10px; }
+        .has-submenu > a { justify-content: space-between !important; }
+        .submenu-toggle { margin-left: 5px; font-size: 14px; color: #f97316; }
+    </style>
+</aside>

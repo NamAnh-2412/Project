@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}{{ phong.tieu_de }} - Booking Phòng Trọ{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="room-detail">
+        <a href="{{ url_for('main.index') }}" class="back-link">← Quay lại danh sách</a>
+
+        {% if error_message == 'own_room' %}
+        <div class="alert alert-error">Bạn không thể đặt phòng của chính mình!</div>
+        {% endif %}
+
+        <div class="room-detail-header">
+            <h1>{{ phong.tieu_de }}</h1>
+            <div class="header-actions">
+                <span class="room-status status-{{ phong.trang_thai }}">{{ get_trang_thai_phong_text(phong.trang_thai) }}</span>
+                {% if is_logged_in() and not is_owner and not is_admin and not is_chu_nha %}
+                <button class="favorite-btn-large {{ 'active' if is_favorite else '' }}" onclick="toggleFavorite({{ phong.id }}, this, {changeInnerHTML: true})" title="{{ 'Bỏ yêu thích' if is_favorite else 'Yêu thích' }}">
+                    {{ '❤️ Đã yêu thích' if is_favorite else '🤍 Yêu thích' }}
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if images %}
+        <div class="room-images">
+            <div class="main-image">
+                <img id="mainImage" src="{{ image_url(images[0].duong_dan_anh) }}" alt="{{ phong.tieu_de }}" onerror="this.src='{{ url_for('static', filename='images/no-image.svg') }}'">
+            </div>
+            {% if images|length > 1 %}
+            <div class="thumbnail-images">
+                {% for image in images %}
+                <img src="{{ image_url(image.duong_dan_anh) }}" alt="Hình ảnh {{ loop.index }}" onclick="changeMainImage('{{ image_url(image.duong_dan_anh) }}')" class="{{ 'active' if loop.first else '' }}" onerror="this.src='{{ url_for('static', filename='images/no-image.svg') }}'">
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="room-images">
+            <div class="main-image">
+                <img src="{{ url_for('static', filename='images/no-image.svg') }}" alt="Không có hình ảnh">
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="room-detail-content">
+            <div class="room-info-section">
+                <div class="info-box">
+                    <h3>💰 Giá thuê</h3>
+                    <p class="room-price-large">{{ "{:,.0f}".format(phong.gia) }} đ/tháng</p>
+                </div>
+
+                <div class="info-box">
+                    <h3>📋 Thông tin phòng</h3>
+                    <ul>
+                        <li><strong>Địa chỉ:</strong> {{ phong.dia_chi }}</li>
+                        {% if phong.quan_huyen %}<li><strong>Quận/Huyện:</strong> {{ phong.quan_huyen }}</li>{% endif %}
+                        {% if phong.dien_tich %}<li><strong>Diện tích:</strong> {{ phong.dien_tich }} m²</li>{% endif %}
+                        <li><strong>Trạng thái:</strong> {{ get_trang_thai_phong_text(phong.trang_thai) }}</li>
+                        {% if phong.chu_nha_ten and (is_owner or has_confirmed_booking or is_admin) %}
+                        <li><strong>Chủ nhà:</strong> {{ phong.chu_nha_ten }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                {% if tien_ich_list %}
+                <div class="info-box">
+                    <h3>🏠 Tiện ích</h3>
+                    <div class="amenities-list">
+                        {% for ti in tien_ich_list %}
+                        <span class="amenity-item">
+                            {% if ti.icon %}<span class="amenity-icon">{{ ti.icon }}</span>{% endif %}
+                            {{ ti.ten }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if phong.mo_ta %}
+                <div class="info-box">
+                    <h3>📝 Mô tả</h3>
+                    <p>{{ phong.mo_ta|replace('\n', '<br>')|safe }}</p>
+                </div>
+                {% endif %}
+
+                {% if is_owner or has_confirmed_booking or is_admin %}
+                <div class="info-box">
+                    <h3>📞 Thông tin liên hệ chủ nhà</h3>
+                    <ul>
+                        {% if phong.chu_nha_ten %}<li><strong>Tên chủ nhà:</strong> {{ phong.chu_nha_ten }}</li>{% endif %}
+                        {% if phong.chu_nha_sdt %}<li><strong>Điện thoại:</strong> {{ phong.chu_nha_sdt }}</li>{% endif %}
+                        {% if phong.chu_nha_email %}<li><strong>Email:</strong> {{ phong.chu_nha_email }}</li>{% endif %}
+                    </ul>
+                </div>
+                {% else %}
+                <div class="info-box">
+                    <h3>📞 Thông tin liên hệ</h3>
+                    <p><em>🔒 Thông tin chủ nhà sẽ được hiển thị sau khi đơn đặt phòng của bạn được xác nhận.</em></p>
+                </div>
+                {% endif %}
+
+                {% if phong.trang_thai == 'da_thue' %}
+                <div class="info-box">
+                    <p class="alert alert-warning">⚠️ Phòng này đã được thuê. Vui lòng tìm phòng khác.</p>
+                </div>
+                {% elif not is_logged_in() %}
+                <div class="info-box">
+                    <p class="alert alert-info">ℹ️ Bạn cần đăng nhập để đặt phòng.</p>
+                    <div style="margin-top: 15px;">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Đăng nhập</a>
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-secondary">Đăng ký tài khoản</a>
+                    </div>
+                </div>
+                {% elif is_owner %}
+                <div class="info-box">
+                    <p class="alert alert-info">ℹ️ Đây là phòng của bạn.</p>
+                    <div style="margin-top: 15px;">
+                        <a href="{{ url_for('admin.edit_room', room_id=phong.id) }}" class="btn btn-warning">Chỉnh sửa phòng</a>
+                        <a href="{{ url_for('admin.manage_rooms') }}" class="btn btn-secondary">Quản lý phòng</a>
+                    </div>
+                </div>
+                {% elif is_admin %}
+                <div class="info-box">
+                    <p class="alert alert-danger" style="background-color: #f8d7da; color: #721c24;">🛡️ <strong>Góc nhìn Admin:</strong> Bạn không thể đặt phòng với tài khoản quản trị.</p>
+                    <div style="margin-top: 15px;">
+                        <a href="{{ url_for('admin.manage_phong') }}" class="btn btn-secondary">Về trang quản lý</a>
+                        <a href="{{ url_for('admin.manage_phong') }}?delete={{ phong.id }}" class="btn btn-danger" onclick="return confirm('Bạn có chắc muốn xóa phòng này?')">Xóa bài đăng này</a>
+                    </div>
+                </div>
+                {% elif is_chu_nha %}
+                <div class="info-box">
+                    <p class="alert alert-warning">🚫 Tài khoản <strong>Chủ nhà</strong> không có chức năng đặt phòng.</p>
+                </div>
+                {% elif phong.trang_thai == 'con_trong' %}
+                <div class="info-box booking-box">
+                    <h3 style="margin-top: 0; color: #27ae60;">✅ Phòng còn trống</h3>
+                    <p><strong>Bạn muốn đặt phòng này?</strong></p>
+                    <div style="margin-top: 20px;">
+                        <a href="{{ url_for('rooms.booking', phong_id=phong.id) }}" class="btn btn-success btn-large">📞 Đặt phòng ngay</a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if is_owner %}
+        <div class="admin-actions">
+            <a href="{{ url_for('admin.edit_room', room_id=phong.id) }}" class="btn btn-warning">Chỉnh sửa phòng</a>
+            <a href="{{ url_for('admin.manage_rooms') }}" class="btn btn-secondary">Quản lý phòng</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/favorites.js') }}"></script>
+<script src="{{ url_for('static', filename='js/room-images.js') }}"></script>
+{% endblock %}

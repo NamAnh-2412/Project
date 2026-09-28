@@ -1,0 +1,160 @@
+/* ========================================
+   FORMS
+   ======================================== */
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Password input with toggle button */
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.password-input-wrapper input {
+    width: 100%;
+    padding-right: 45px; /* Tạo khoảng trống cho nút */
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s;
+}
+
+.password-toggle:hover {
+    opacity: 0.7;
+}
+
+.password-toggle:focus {
+    outline: none;
+}
+
+.password-icon {
+    cursor: pointer;
+    user-select: none;
+    display: inline-block;
+    font-size: 18px;
+    line-height: 1;
+    transition: transform 0.2s;
+    width: 20px;
+    height: 20px;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    transition: color 0.3s;
+}
+
+.password-toggle:hover .password-icon {
+    color: #3498db;
+    transform: scale(1.1);
+}
+
+.password-toggle:active .password-icon {
+    transform: scale(0.95);
+}
+
+/* Icon khi ẩn (hide) - icon mắt có gạch chéo */
+.password-icon.hide::before {
+    content: '👁';
+    font-size: 18px;
+    opacity: 0.7;
+}
+
+.password-icon.hide::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 2px;
+    background: #666;
+    transform: translate(-50%, -50%) rotate(45deg);
+    opacity: 0.8;
+}
+
+/* Icon khi hiển thị (show) - icon mắt không gạch */
+.password-icon.show::before {
+    content: '👁';
+    font-size: 18px;
+    color: #3498db;
+    opacity: 1;
+}
+
+.password-icon.show::after {
+    display: none;
+}
+
+/* File input styling */
+.file-input {
+    display: none;
+}
+
+.file-input-label {
+    display: inline-block;
+    cursor: pointer;
+    padding: 12px 20px;
+    background: #3498db;
+    color: white;
+    border-radius: 4px;
+    transition: background 0.3s;
+    margin-bottom: 10px;
+}
+
+.file-input-label:hover {
+    background: #2980b9;
+}
+
+.file-input-text {
+    margin-right: 10px;
+}
+
+.file-input-button {
+    font-weight: bold;
+}
+
+.image-preview {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border: 1px dashed #ddd;
+}
+
+.image-preview img {
+    border-radius: 4px;
+}
+

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Phòng yêu thích - Booking Phòng Trọ{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Phòng yêu thích của tôi</h1>
+
+    {% if not favorite_rooms %}
+    <p class="no-results">Bạn chưa có phòng yêu thích nào.</p>
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary">Tìm phòng ngay</a>
+    {% else %}
+    <div class="rooms-grid">
+        {% for room in favorite_rooms %}
+        {% set main_image = room.anh_chinh or room.anh_dau_tien or 'images/no-image.svg' %}
+        <div class="room-card">
+            <div class="room-image">
+                <img src="{{ image_url(main_image) }}" alt="{{ room.tieu_de }}" onerror="this.src='{{ url_for('static', filename='images/no-image.svg') }}'">
+                <span class="room-status status-{{ room.trang_thai }}">{{ get_trang_thai_phong_text(room.trang_thai) }}</span>
+                <button class="favorite-btn active" onclick="toggleFavorite({{ room.id }}, this, {removeCardOnUnfavorite: true})" title="Bỏ yêu thích">❤️</button>
+            </div>
+            <div class="room-info">
+                <h3>{{ room.tieu_de }}</h3>
+                <p class="room-price">{{ "{:,.0f}".format(room.gia) }} đ/tháng</p>
+                <p class="room-address">📍 {{ room.dia_chi }}</p>
+                {% if room.dien_tich %}<p class="room-area">📐 Diện tích: {{ room.dien_tich }} m²</p>{% endif %}
+                <p class="favorite-date"><small>Đã yêu thích: {{ room.ngay_yeu_thich.strftime('%d/%m/%Y') if room.ngay_yeu_thich else '' }}</small></p>
+                <a href="{{ url_for('rooms.room_detail', room_id=room.id) }}" class="btn btn-primary">Xem chi tiết</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<script src="{{ url_for('static', filename='js/favorites.js') }}"></script>
+{% endblock %}

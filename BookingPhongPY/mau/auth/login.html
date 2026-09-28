@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Đăng nhập - Booking Phòng Trọ{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-form">
+        <h2>Đăng nhập</h2>
+
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="">
+            <div class="form-group">
+                <label>Loại đăng nhập</label>
+                <select name="login_type" id="login_type" onchange="updateLoginForm()" style="width: 100%; padding: 10px; margin-bottom: 15px;">
+                    <option value="user">Người dùng (Email)</option>
+                    <option value="admin">Admin (Tên đăng nhập)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label id="email_label">Email</label>
+                <input type="text" name="email" id="email_input" required value="{{ request.form.get('email', '') }}" placeholder="Nhập email hoặc tên đăng nhập">
+            </div>
+
+            <div class="form-group">
+                <label>Mật khẩu</label>
+                <div class="password-input-wrapper">
+                    <input type="password" name="password" id="password" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword('password')" title="Hiển thị mật khẩu">
+                        <span class="password-icon hide" id="password-icon"></span>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Đăng nhập</button>
+        </form>
+
+        <script>
+            function updateLoginForm() {
+                const loginType = document.getElementById('login_type').value;
+                const emailLabel = document.getElementById('email_label');
+                const emailInput = document.getElementById('email_input');
+                if (loginType === 'admin') {
+                    emailLabel.textContent = 'Tên đăng nhập';
+                    emailInput.placeholder = 'Nhập tên đăng nhập';
+                    emailInput.type = 'text';
+                } else {
+                    emailLabel.textContent = 'Email';
+                    emailInput.placeholder = 'Nhập email';
+                    emailInput.type = 'email';
+                }
+            }
+        </script>
+
+        <p class="text-center">
+            Chưa có tài khoản? <a href="{{ url_for('auth.register') }}">Đăng ký ngay</a>
+        </p>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/password-toggle.js') }}"></script>
+{% endblock %}

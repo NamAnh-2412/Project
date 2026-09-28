@@ -1,0 +1,513 @@
+/* ============================================
+   ANIMATIONS.CSS - Animations & Transitions nâng cao
+   ============================================ */
+
+/* ===== 1. PAGE TRANSITIONS ===== */
+/* Fade in khi trang load */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apply cho main content */
+.main-inner,
+.container {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* Stagger animation cho các items (lists, cards) */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Sử dụng với class .animate-on-load */
+.animate-on-load {
+  opacity: 0;
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.animate-on-load:nth-child(1) { animation-delay: 0.05s; }
+.animate-on-load:nth-child(2) { animation-delay: 0.1s; }
+.animate-on-load:nth-child(3) { animation-delay: 0.15s; }
+.animate-on-load:nth-child(4) { animation-delay: 0.2s; }
+.animate-on-load:nth-child(5) { animation-delay: 0.25s; }
+.animate-on-load:nth-child(6) { animation-delay: 0.3s; }
+
+
+/* ===== 2. MODAL ANIMATIONS ===== */
+/* Modal backdrop fade in (chỉ opacity) */
+@keyframes fadeInOpacity {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal content scale + fade */
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalSlideOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+}
+
+/* Apply cho modals */
+.payment-modal,
+.options-modal {
+  animation: fadeInOpacity 0.2s ease-out;
+}
+
+.payment-modal.active .payment-dialog,
+.options-modal.active .options-card {
+  animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Modal closing animation (thêm class .closing) */
+.payment-modal.closing .payment-dialog,
+.options-modal.closing .options-card {
+  animation: modalSlideOut 0.2s ease-in;
+}
+
+
+/* ===== 3. CARD HOVER EFFECTS NÂNG CAO ===== */
+.stat-card,
+.prod-card,
+.content-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hover lift effect */
+.stat-card:hover,
+.prod-card:hover,
+.content-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Active/press effect */
+.stat-card:active,
+.prod-card:active {
+  transform: translateY(-2px);
+  transition: transform 0.1s;
+}
+
+/* Card glow effect khi hover */
+.stat-card:hover::before,
+.prod-card:hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+  opacity: 0.8;
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+
+/* ===== 4. TABLE ROW ANIMATIONS ===== */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Table row entrance */
+.table tbody tr {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.table tbody tr:nth-child(1) { animation-delay: 0.05s; }
+.table tbody tr:nth-child(2) { animation-delay: 0.1s; }
+.table tbody tr:nth-child(3) { animation-delay: 0.15s; }
+.table tbody tr:nth-child(4) { animation-delay: 0.2s; }
+.table tbody tr:nth-child(5) { animation-delay: 0.25s; }
+
+/* Table row hover với smooth transition */
+.table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background: #f8fafc;
+  transform: translateX(4px);
+  box-shadow: -4px 0 0 0 var(--primary-color);
+}
+
+
+/* ===== 5. BUTTON ANIMATIONS NÂNG CAO ===== */
+/* Button ripple effect */
+.btn-primary,
+.btn-add,
+.btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.btn-primary::after,
+.btn-add::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:active::after,
+.btn-add:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* Button hover scale */
+.btn-primary:hover,
+.btn-add:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
+}
+
+.btn-primary:active,
+.btn-add:active {
+  transform: translateY(0) scale(0.98);
+  transition: transform 0.1s;
+}
+
+/* Button success animation */
+@keyframes buttonSuccess {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.btn-success-animation {
+  animation: buttonSuccess 0.4s ease;
+}
+
+
+/* ===== 6. FORM INPUT ANIMATIONS ===== */
+/* Input focus animation */
+.form-control,
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="tel"],
+input[type="password"],
+textarea,
+select {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-control:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
+}
+
+/* Input error shake */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.input-error {
+  animation: shake 0.4s ease;
+  border-color: var(--error-color) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Input success checkmark */
+@keyframes checkmark {
+  0% {
+    transform: scale(0) rotate(45deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) rotate(45deg);
+  }
+  100% {
+    transform: scale(1) rotate(45deg);
+    opacity: 1;
+  }
+}
+
+.input-success::after {
+  content: '✓';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--success-color);
+  font-weight: bold;
+  animation: checkmark 0.3s ease;
+}
+
+
+/* ===== 7. NOTIFICATION/ALERT ANIMATIONS ===== */
+/* Slide in từ top */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.alert,
+.error,
+.success {
+  animation: slideDown 0.3s ease-out;
+}
+
+/* Success bounce */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.success-bounce {
+  animation: bounceIn 0.5s ease;
+}
+
+
+/* ===== 8. SIDEBAR MENU ANIMATIONS ===== */
+/* Menu item slide in */
+.sidebar .menu-item a,
+.sidebar .icon-link {
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.sidebar .menu-item a::before,
+.sidebar .icon-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--primary-color);
+  transform: scaleY(0);
+  transition: transform 0.2s ease;
+}
+
+.sidebar .menu-item a:hover::before,
+.sidebar .menu-item a.active::before,
+.sidebar .icon-link:hover::before,
+.sidebar .icon-link.active::before {
+  transform: scaleY(1);
+}
+
+/* Submenu slide down smooth */
+.submenu a {
+  transition: all 0.2s ease;
+  transform: translateX(-10px);
+  opacity: 0.8;
+}
+
+.submenu.active a {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.submenu.active a:nth-child(1) { transition-delay: 0.05s; }
+.submenu.active a:nth-child(2) { transition-delay: 0.1s; }
+.submenu.active a:nth-child(3) { transition-delay: 0.15s; }
+.submenu.active a:nth-child(4) { transition-delay: 0.2s; }
+
+
+/* ===== 9. STAT CARD COUNTER ANIMATION ===== */
+/* Số đếm tăng dần (sẽ dùng với JavaScript) */
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stat-value {
+  animation: countUp 0.5s ease-out;
+}
+
+
+/* ===== 10. LOADING SKELETON PULSE ===== */
+/* Đã có trong loading.css, nhưng có thể thêm pulse */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.skeleton-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+
+/* ===== 11. DELETE/CANCEL CONFIRMATION ===== */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+.btn-delete:hover {
+  animation: wiggle 0.3s ease;
+}
+
+
+/* ===== 12. SCROLL REVEAL ANIMATION ===== */
+/* Fade in khi scroll vào view */
+@keyframes scrollReveal {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.scroll-reveal {
+  opacity: 0;
+  transition: all 0.6s ease;
+}
+
+.scroll-reveal.revealed {
+  animation: scrollReveal 0.6s ease forwards;
+}
+
+
+/* ===== 13. PRODUCT CARD SPECIAL EFFECTS ===== */
+/* Product image zoom on hover */
+.prod-card img {
+  transition: transform 0.4s ease;
+}
+
+.prod-card:hover img {
+  transform: scale(1.05);
+}
+
+/* Badge pulse */
+.badge,
+.status-badge {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+
+/* ===== 14. SMOOTH SCROLLING ===== */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar với animation */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+
+/* ===== 15. PERFORMANCE OPTIMIZATIONS ===== */
+/* Chỉ animate khi cần, tắt trên mobile nếu muốn */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Hardware acceleration cho smooth animations */
+.stat-card,
+.prod-card,
+.btn-primary,
+.modal {
+  transform: translateZ(0);
+  will-change: transform;
+}
+

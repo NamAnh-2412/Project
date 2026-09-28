@@ -1,0 +1,451 @@
+/* ============================================
+   FORMS.CSS - Enhanced Form Inputs
+   ============================================ */
+
+/* ===== FLOATING LABELS ===== */
+.form-group-floating {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.form-input-floating,
+.form-control-floating {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid var(--border-light, #e2e8f0);
+  border-radius: var(--radius-sm, 10px);
+  font-size: 16px;
+  background: var(--bg-white, #ffffff);
+  color: var(--text-dark, #1e293b);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.form-input-floating:focus,
+.form-control-floating:focus {
+  border-color: var(--primary-color, #f97316);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-label-floating {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  color: var(--text-muted, #94a3b8);
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 16px;
+  background: var(--bg-white, #ffffff);
+  padding: 0 4px;
+  z-index: 1;
+}
+
+.form-input-floating:focus + .form-label-floating,
+.form-control-floating:focus + .form-label-floating,
+.form-input-floating:not(:placeholder-shown) + .form-label-floating,
+.form-control-floating:not(:placeholder-shown) + .form-label-floating,
+.form-input-floating.has-value + .form-label-floating,
+.form-control-floating.has-value + .form-label-floating {
+  top: -10px;
+  left: 12px;
+  font-size: 12px;
+  color: var(--primary-color, #f97316);
+  font-weight: 600;
+}
+
+/* Required indicator */
+.form-label-floating.required::after {
+  content: ' *';
+  color: var(--error-color, #ef4444);
+}
+
+/* ===== ENHANCED INPUT STATES ===== */
+.form-input,
+.form-control {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border-light, #e2e8f0);
+  border-radius: var(--radius-sm, 10px);
+  font-size: 15px;
+  background: var(--bg-white, #ffffff);
+  color: var(--text-dark, #1e293b);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  margin-bottom: 0;
+}
+
+.form-input:focus,
+.form-control:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary-color, #f97316);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-input::placeholder,
+.form-control::placeholder,
+textarea::placeholder {
+  color: var(--text-muted, #94a3b8);
+  opacity: 0.7;
+}
+
+/* Disabled state */
+.form-input:disabled,
+.form-control:disabled,
+textarea:disabled,
+select:disabled {
+  background: var(--bg-light, #f3f4f6);
+  color: var(--text-muted, #9ca3af);
+  cursor: not-allowed;
+  opacity: 0.6;
+  border-color: var(--border-light, #e2e8f0);
+}
+
+/* ===== ERROR STATES ===== */
+.form-group {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.form-input.error,
+.form-control.error,
+.form-input-floating.error,
+.form-control-floating.error,
+textarea.error,
+select.error {
+  border-color: var(--error-color, #ef4444) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+  animation: shake 0.4s ease;
+}
+
+.form-error-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--error-color, #ef4444);
+  font-size: 18px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.form-group-floating .form-error-icon {
+  top: 18px; /* Adjust for floating label */
+}
+
+.form-error-message {
+  display: block;
+  color: var(--error-color, #ef4444);
+  font-size: 13px;
+  margin-top: 6px;
+  font-weight: 500;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0) translateY(-1px); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px) translateY(-1px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px) translateY(-1px); }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== SUCCESS STATES ===== */
+.form-input.success,
+.form-control.success,
+.form-input-floating.success,
+.form-control-floating.success,
+textarea.success,
+select.success {
+  border-color: var(--success-color, #10b981) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+}
+
+.form-success-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--success-color, #10b981);
+  font-size: 18px;
+  pointer-events: none;
+  z-index: 2;
+  animation: checkmark 0.3s ease;
+}
+
+.form-group-floating .form-success-icon {
+  top: 18px;
+}
+
+.form-success-message {
+  display: block;
+  color: var(--success-color, #10b981);
+  font-size: 13px;
+  margin-top: 6px;
+  font-weight: 500;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes checkmark {
+  0% {
+    transform: translateY(-50%) scale(0) rotate(45deg);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(-50%) scale(1.2) rotate(45deg);
+  }
+  100% {
+    transform: translateY(-50%) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* ===== INPUT GROUPS (Prefix/Suffix Icons) ===== */
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.input-icon-prefix,
+.input-icon-suffix {
+  position: absolute;
+  color: var(--text-muted, #94a3b8);
+  font-size: 18px;
+  z-index: 2;
+  pointer-events: none;
+  transition: color 0.3s ease;
+}
+
+.input-icon-prefix {
+  left: 16px;
+}
+
+.input-icon-suffix {
+  right: 16px;
+  pointer-events: all; /* Cho phép click (ví dụ: show password) */
+  cursor: pointer;
+}
+
+.input-icon-suffix:hover {
+  color: var(--primary-color, #f97316);
+}
+
+/* Input với icon prefix */
+.form-input-with-icon-prefix {
+  width: 100%;
+  padding: 12px 16px 12px 48px; /* Extra padding cho icon */
+  border: 2px solid var(--border-light, #e2e8f0);
+  border-radius: var(--radius-sm, 10px);
+  font-size: 15px;
+  background: var(--bg-white, #ffffff);
+  color: var(--text-dark, #1e293b);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.form-input-with-icon-prefix:focus {
+  border-color: var(--primary-color, #f97316);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-input-with-icon-prefix:focus + .input-icon-prefix,
+.input-group:focus-within .input-icon-prefix {
+  color: var(--primary-color, #f97316);
+}
+
+/* Input với icon suffix */
+.form-input-with-icon-suffix {
+  width: 100%;
+  padding: 12px 48px 12px 16px; /* Extra padding cho icon */
+  border: 2px solid var(--border-light, #e2e8f0);
+  border-radius: var(--radius-sm, 10px);
+  font-size: 15px;
+  background: var(--bg-white, #ffffff);
+  color: var(--text-dark, #1e293b);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.form-input-with-icon-suffix:focus {
+  border-color: var(--primary-color, #f97316);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Input với cả prefix và suffix */
+.form-input-with-icons {
+  width: 100%;
+  padding: 12px 48px;
+  border: 2px solid var(--border-light, #e2e8f0);
+  border-radius: var(--radius-sm, 10px);
+  font-size: 15px;
+  background: var(--bg-white, #ffffff);
+  color: var(--text-dark, #1e293b);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.form-input-with-icons:focus {
+  border-color: var(--primary-color, #f97316);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+  transform: translateY(-1px);
+}
+
+/* ===== TEXTAREA ===== */
+textarea.form-input,
+textarea.form-control {
+  min-height: 100px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.6;
+}
+
+textarea.form-input-floating {
+  min-height: 100px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.6;
+  padding-top: 20px; /* Extra space cho floating label */
+}
+
+/* ===== SELECT ===== */
+select.form-input,
+select.form-control {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 40px;
+}
+
+select.form-input:focus,
+select.form-control:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f97316' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+}
+
+/* ===== LABEL STYLES ===== */
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text-medium, #475569);
+  font-size: 14px;
+}
+
+.form-label.required::after {
+  content: ' *';
+  color: var(--error-color, #ef4444);
+}
+
+/* ===== FORM HELPER TEXT ===== */
+.form-helper-text {
+  display: block;
+  color: var(--text-muted, #94a3b8);
+  font-size: 13px;
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+/* ===== INPUT SIZES ===== */
+.form-input-sm,
+.form-control-sm {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.form-input-lg,
+.form-control-lg {
+  padding: 16px 20px;
+  font-size: 18px;
+}
+
+/* ===== OVERRIDE EXISTING STYLES (add-form, etc.) ===== */
+/* Đảm bảo form-input trong add-form sử dụng styles mới */
+.add-form .form-input,
+.add-form .form-control {
+  width: 100%;
+  margin-bottom: 0 !important;
+  margin-right: 0 !important;
+}
+
+.add-form .form-group {
+  margin-bottom: 20px;
+}
+
+.add-form .form-group:last-child {
+  margin-bottom: 0;
+}
+
+/* ===== COMPATIBILITY: Backward compatible với existing forms ===== */
+/* Nếu form dùng class cũ, vẫn áp dụng styles mới */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+input[type="password"],
+input[type="date"],
+input[type="time"],
+textarea,
+select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border-light, #e2e8f0);
+  border-radius: var(--radius-sm, 10px);
+  font-size: 15px;
+  background: var(--bg-white, #ffffff);
+  color: var(--text-dark, #1e293b);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  box-sizing: border-box;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+input[type="number"]:focus,
+input[type="password"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary-color, #f97316);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+  transform: translateY(-1px);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .form-input-floating,
+  .form-control-floating,
+  .form-input,
+  .form-control {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  .form-label-floating {
+    font-size: 16px;
+  }
+
+  .form-input-floating:focus + .form-label-floating,
+  .form-control-floating:focus + .form-label-floating,
+  .form-input-floating:not(:placeholder-shown) + .form-label-floating,
+  .form-control-floating:not(:placeholder-shown) + .form-label-floating {
+    font-size: 12px;
+  }
+}
+

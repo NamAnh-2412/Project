@@ -1,0 +1,11 @@
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="cp" value="${pageContext.request.contextPath}" scope="page"/>
+<link rel="stylesheet" href="${cp}/assets/css/core.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+<c:if test="${not empty extraCss}">
+    <c:forEach var="sheet" items="${extraCss}">
+        <link rel="stylesheet" href="${cp}/assets/css/${sheet}"/>
+    </c:forEach>
+</c:if>
+<script>window.APP_BASE_PATH = '${cp}/';</script>
+<script defer src="${cp}/js/core.js"></script>

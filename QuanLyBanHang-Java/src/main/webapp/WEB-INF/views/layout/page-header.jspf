@@ -1,0 +1,19 @@
+<%@ page pageEncoding="UTF-8" contentType="text/html; charset=UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="barClass" value="${empty headerBarClass ? 'header-bar' : headerBarClass}"/>
+<c:set var="headerTitle" value="${not empty pageHeaderTitle ? pageHeaderTitle : pageTitle}"/>
+<div class="${barClass}">
+    <h2>
+        <c:if test="${not empty pageHeaderIcon}">
+            <i class="${pageHeaderIcon}"></i>
+        </c:if>
+        ${headerTitle}
+    </h2>
+    <div class="accbox">
+        <div class="acc-ava">${firstChar}</div>
+        <div class="accbox-name">Xin chào, ${displayName}</div>
+    </div>
+</div>
+<c:if test="${not empty headerSubtitle}">
+    <p class="page-subtitle" style="margin:-12px 0 20px 32px;color:#64748b;font-size:15px;">${headerSubtitle}</p>
+</c:if>

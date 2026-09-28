@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Quản lý Người thuê - Admin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1>👥 Quản lý Người thuê</h1>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">← Về trang quản lý tổng</a>
+    </div>
+
+    {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="alert alert-{{ 'error' if message[0] == 'error' else 'success' }}">{{ message[1] }}</div>
+    {% endfor %}
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr><th>ID</th><th>Họ tên</th><th>Email</th><th>Số booking</th><th>Thao tác</th></tr>
+            </thead>
+            <tbody>
+                {% for nd in nguoi_thue_list %}
+                <tr>
+                    <td>{{ nd.id }}</td>
+                    <td>{{ nd.ho_ten }}</td>
+                    <td>{{ nd.email }}</td>
+                    <td>{{ nd.so_booking or 0 }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.view_nguoi_thue', nguoi_thue_id=nd.id) }}" class="btn btn-sm btn-primary">Xem</a>
+                        <a href="{{ url_for('admin.manage_nguoi_thue') }}?delete={{ nd.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Xóa người thuê này?')">Xóa</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center">Chưa có người thuê nào.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

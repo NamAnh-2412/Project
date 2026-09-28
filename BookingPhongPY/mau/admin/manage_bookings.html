@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Quản lý Booking - Admin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1>📋 Quản lý Booking</h1>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">← Về trang quản lý tổng</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr><th>ID</th><th>Phòng</th><th>Khách hàng</th><th>Trạng thái</th><th>Ngày đặt</th></tr>
+            </thead>
+            <tbody>
+                {% for b in bookings %}
+                <tr>
+                    <td>{{ b.id }}</td>
+                    <td>{{ b.phong_tieu_de }}</td>
+                    <td>{{ b.khach_hang_ten }} ({{ b.khach_hang_email }})</td>
+                    <td><span style="background: {{ get_trang_thai_booking_info(b.trang_thai).color }}; color: white; padding: 5px 10px; border-radius: 4px;">{{ get_trang_thai_booking_info(b.trang_thai).text }}</span></td>
+                    <td>{{ b.ngay_tao.strftime('%d/%m/%Y %H:%M') if b.ngay_tao else '' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center">Chưa có booking nào.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

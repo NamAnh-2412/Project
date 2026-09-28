@@ -1,0 +1,27 @@
+/* ========================================
+   MAIN STYLESHEET - Import tất cả các file CSS
+   ======================================== */
+
+/* Base & Reset */
+@import url('base.css');
+
+/* Header & Navigation */
+@import url('header.css');
+
+/* Buttons */
+@import url('buttons.css');
+
+/* Forms */
+@import url('forms.css');
+
+/* Auth Pages */
+@import url('auth.css');
+
+/* Rooms - Grid, Cards, Detail */
+@import url('rooms.css');
+
+/* Components - Alerts, Tables, Footer, Badges, Amenities */
+@import url('components.css');
+
+/* Responsive */
+@import url('responsive.css');

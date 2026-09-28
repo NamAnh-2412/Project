@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Booking Phòng Trọ{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    {% block header %}{% include 'includes/header.html' %}{% endblock %}
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    {% block footer %}{% include 'includes/footer.html' %}{% endblock %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

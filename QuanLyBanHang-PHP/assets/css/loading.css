@@ -1,0 +1,405 @@
+/* ============================================
+   LOADING STATES - CSS Styles
+   ============================================ */
+
+/* ===== SPINNER ANIMATION ===== */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ===== BUTTON LOADING STATE ===== */
+/* NOTE: Main button loading styles are in micro-interactions.css */
+/* This file only contains legacy/fallback styles for compatibility */
+
+.btn.loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.btn.loading .btn-text {
+  opacity: 0;
+}
+
+/* Legacy .btn-loading element (if used with old API) */
+.btn-loading {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+
+.btn-loading i {
+  animation: spin 1s linear infinite;
+}
+
+/* Spinner icon */
+.fa-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* ===== PAGE LOADER (Full page) ===== */
+.page-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.page-loader.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.page-loader-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f0f0f0;
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+.page-loader-text {
+  color: #64748b;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* ===== SKELETON LOADING ===== */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 1000px 100%;
+  border-radius: 4px;
+  animation: shimmer 2s infinite;
+}
+
+/* Skeleton table rows */
+.skeleton-table {
+  width: 100%;
+}
+
+.skeleton-row {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  align-items: center;
+}
+
+.skeleton-cell {
+  flex: 1;
+  height: 20px;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 1000px 100%;
+  border-radius: 4px;
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-cell.short {
+  flex: 0 0 100px;
+}
+
+.skeleton-cell.medium {
+  flex: 0 0 150px;
+}
+
+.skeleton-cell.long {
+  flex: 0 0 200px;
+}
+
+/* Skeleton cards */
+.skeleton-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.skeleton-card-header {
+  margin-bottom: 16px;
+}
+
+.skeleton-card-title {
+  height: 24px;
+  width: 60%;
+  margin-bottom: 8px;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 1000px 100%;
+  border-radius: 4px;
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-card-subtitle {
+  height: 16px;
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 1000px 100%;
+  border-radius: 4px;
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-line {
+  height: 16px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 1000px 100%;
+  border-radius: 4px;
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-line.short {
+  width: 60%;
+}
+
+.skeleton-line.medium {
+  width: 80%;
+}
+
+/* ===== INLINE LOADING ===== */
+.inline-loader {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 14px;
+  padding: 8px 16px;
+}
+
+.inline-loader i {
+  animation: spin 1s linear infinite;
+  color: #f97316;
+}
+
+/* ===== PROGRESS BAR ===== */
+.progress-container {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 16px 0;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #f97316, #fb923c);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  font-size: 10px;
+  color: white;
+  font-weight: 600;
+  min-width: 30px;
+}
+
+.progress-bar-empty {
+  width: 0%;
+}
+
+.progress-text {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #64748b;
+  text-align: center;
+}
+
+/* ===== LOADING OVERLAY (For tables, cards) ===== */
+.loading-overlay {
+  position: relative;
+}
+
+.loading-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 12px;
+}
+
+.loading-overlay .overlay-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  z-index: 11;
+}
+
+/* ===== SMALL SPINNER (For inline use) ===== */
+.spinner-small {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.spinner-medium {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.spinner-large {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ===== LOADING STATE FOR FORMS ===== */
+.form-loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.form-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  z-index: 5;
+}
+
+/* ===== EMPTY STATE (When no loading, no data) ===== */
+.empty-state {
+  text-align: center;
+  padding: 64px 32px;
+  color: #64748b;
+}
+
+.empty-state-icon {
+  font-size: 64px;
+  color: #cbd5e1;
+  margin-bottom: 24px;
+}
+
+.empty-state-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 8px;
+}
+
+.empty-state-text {
+  font-size: 16px;
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+.empty-state-action {
+  margin-top: 16px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .page-loader-spinner {
+    width: 40px;
+    height: 40px;
+    border-width: 3px;
+  }
+  
+  .page-loader-text {
+    font-size: 14px;
+  }
+  
+  .skeleton-row {
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+  
+  .skeleton-cell {
+    flex: 1 1 100%;
+    margin-bottom: 8px;
+  }
+}
+

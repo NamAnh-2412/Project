@@ -1,0 +1,4 @@
+uploads/images/products/*
+!uploads/images/products/.gitkeep
+uploads/images/shop/*
+!uploads/images/shop/.gitkeep

@@ -1,0 +1,52 @@
+<header class="header">
+    <div class="container">
+        {% if is_logged_in() %}
+        <div class="header-top">
+            <div class="header-user-section">
+                <span class="user-info">
+                    {% if is_admin() and get_current_admin() %}
+                    Xin chào, <strong>{{ get_current_admin().ho_ten }}</strong>
+                    <span class="badge" style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; margin-left: 5px;">🛡️ Admin</span>
+                    {% elif get_current_user() %}
+                    Xin chào, <strong>{{ get_current_user().ho_ten }}</strong>
+                    {% if is_chu_nha() %}
+                    <span class="badge badge-admin">🏠 Chủ nhà</span>
+                    {% endif %}
+                    {% endif %}
+                </span>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-outline">Đăng xuất</a>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="header-content">
+            <div class="logo">
+                <a href="{{ url_for('main.index') }}">
+                    <h2>🏠 Booking Phòng Trọ</h2>
+                </a>
+            </div>
+
+            <nav class="nav">
+                <a href="{{ url_for('main.index') }}" class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}">Trang chủ</a>
+                {% if is_logged_in() %}
+                    {% if is_admin() %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">Quản lý tổng</a>
+                    <a href="{{ url_for('admin.manage_phong') }}" class="nav-link">Quản lý phòng</a>
+                    <a href="{{ url_for('admin.manage_chu_nha') }}" class="nav-link">Quản lý chủ nhà</a>
+                    <a href="{{ url_for('admin.manage_nguoi_thue') }}" class="nav-link">Quản lý người thuê</a>
+                    {% elif is_chu_nha() %}
+                    <a href="{{ url_for('admin.manage_rooms') }}" class="nav-link btn btn-primary {% if request.endpoint in ['admin.manage_rooms', 'admin.edit_room'] %}active{% endif %}" style="padding: 5px 15px; font-size: 14px;">+ Đăng phòng</a>
+                    <a href="{{ url_for('admin.chu_nha_bookings') }}" class="nav-link {% if request.endpoint == 'admin.chu_nha_bookings' %}active{% endif %}">Đơn đặt phòng</a>
+                    <a href="{{ url_for('admin.chu_nha_index') }}" class="nav-link {% if request.endpoint == 'admin.chu_nha_index' %}active{% endif %}">Thống kê</a>
+                    {% else %}
+                    <a href="{{ url_for('rooms.my_bookings') }}" class="nav-link {% if request.endpoint == 'rooms.my_bookings' %}active{% endif %}">Đặt phòng của tôi</a>
+                    <a href="{{ url_for('rooms.favorites') }}" class="nav-link {% if request.endpoint == 'rooms.favorites' %}active{% endif %}">Yêu thích</a>
+                    {% endif %}
+                {% else %}
+                <a href="{{ url_for('auth.login') }}" class="nav-link {% if request.endpoint == 'auth.login' %}active{% endif %}">Đăng nhập</a>
+                <a href="{{ url_for('auth.register') }}" class="nav-link btn btn-primary {% if request.endpoint == 'auth.register' %}active{% endif %}">Đăng ký</a>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+</header>

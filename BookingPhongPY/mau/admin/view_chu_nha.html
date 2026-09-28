@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Chi tiết Chủ nhà - Admin{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('admin.manage_chu_nha') }}" class="btn btn-secondary">← Quay lại</a>
+    </div>
+
+    <h1>🏠 Chi tiết Chủ nhà</h1>
+
+    <!-- Thông tin chủ nhà -->
+    <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
+        <h2>Thông tin cá nhân</h2>
+        <table class="table" style="margin-top: 15px;">
+            <tr><th width="200">ID:</th><td>{{ chu_nha.id }}</td></tr>
+            <tr><th>Họ tên:</th><td><strong>{{ chu_nha.ho_ten or 'N/A' }}</strong></td></tr>
+            <tr><th>Email:</th><td>{{ chu_nha.email }}</td></tr>
+            <tr><th>Số điện thoại:</th><td>{{ chu_nha.so_dien_thoai or 'N/A' }}</td></tr>
+            <tr><th>Ngày đăng ký:</th><td>{{ chu_nha.ngay_tao.strftime('%d/%m/%Y %H:%M') if chu_nha.ngay_tao else 'N/A' }}</td></tr>
+        </table>
+    </div>
+
+    <!-- Thống kê -->
+    <div class="stats-grid" style="margin-bottom: 30px;">
+        <div class="stat-card" style="border-left: 4px solid #3498db;">
+            <h3>Tổng số phòng</h3>
+            <p class="stat-number">{{ stats.total_rooms }}</p>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid #27ae60;">
+            <h3>Phòng còn trống</h3>
+            <p class="stat-number">{{ stats.available_rooms }}</p>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid #f39c12;">
+            <h3>Phòng đã thuê</h3>
+            <p class="stat-number">{{ stats.rented_rooms }}</p>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid #9b59b6;">
+            <h3>Tổng số booking</h3>
+            <p class="stat-number">{{ stats.total_bookings }}</p>
+        </div>
+    </div>
+
+    <!-- Danh sách phòng -->
+    <h2>Danh sách phòng ({{ phong_list|length }})</h2>
+    {% if not phong_list %}
+    <p class="no-results">Chủ nhà này chưa có phòng nào.</p>
+    {% else %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr><th>ID</th><th>Tiêu đề</th><th>Giá</th><th>Diện tích</th><th>Địa chỉ</th><th>Trạng thái</th><th>Hành động</th></tr>
+            </thead>
+            <tbody>
+                {% for phong in phong_list %}
+                <tr>
+                    <td>{{ phong.id }}</td>
+                    <td><strong>{{ phong.tieu_de }}</strong></td>
+                    <td><strong style="color: #e74c3c;">{{ "{:,.0f}".format(phong.gia) }} đ</strong></td>
+                    <td>{% if phong.dien_tich %}{{ phong.dien_tich }} m²{% else %}N/A{% endif %}</td>
+                    <td><small>{{ phong.dia_chi[:50] }}{% if phong.dia_chi|length > 50 %}...{% endif %}</small></td>
+                    <td>
+                        {% if phong.trang_thai == 'con_trong' %}
+                        <span class="badge" style="background: #27ae60; color: white; padding: 5px 10px; border-radius: 4px;">Còn trống</span>
+                        {% else %}
+                        <span class="badge" style="background: #e74c3c; color: white; padding: 5px 10px; border-radius: 4px;">Đã thuê</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('rooms.room_detail', room_id=phong.id) }}" target="_blank" class="btn btn-primary btn-sm">Xem</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

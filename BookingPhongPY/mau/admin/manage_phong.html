@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Quản lý Phòng - Admin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1>🏘️ Quản lý Phòng</h1>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">← Về trang quản lý tổng</a>
+    </div>
+
+    {% for message in get_flashed_messages(with_categories=true) %}
+    <div class="alert alert-{{ 'error' if message[0] == 'error' else 'success' }}">{{ message[1] }}</div>
+    {% endfor %}
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr><th>ID</th><th>Ảnh</th><th>Tiêu đề</th><th>Chủ nhà</th><th>Địa chỉ</th><th>Giá</th><th>Trạng thái</th><th>Thao tác</th></tr>
+            </thead>
+            <tbody>
+                {% for p in phong_list %}
+                <tr>
+                    <td>{{ p.id }}</td>
+                    <td><img src="{{ image_url(p.anh_chinh or p.anh_dau_tien) }}" alt="" style="width: 80px; height: 60px; object-fit: cover; border-radius: 4px;" onerror="this.src='{{ url_for('static', filename='images/no-image.svg') }}'"></td>
+                    <td>{{ p.tieu_de }}</td>
+                    <td>{{ p.chu_nha_ten or '-' }}</td>
+                    <td>{{ p.dia_chi[:50] }}{% if p.dia_chi|length > 50 %}...{% endif %}</td>
+                    <td>{{ "{:,.0f}".format(p.gia) }} đ</td>
+                    <td><span class="room-status status-{{ p.trang_thai }}">{{ get_trang_thai_phong_text(p.trang_thai) }}</span></td>
+                    <td>
+                        <a href="{{ url_for('rooms.room_detail', room_id=p.id) }}" class="btn btn-sm btn-secondary">Xem</a>
+                        <a href="{{ url_for('admin.manage_phong') }}?delete={{ p.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Xóa phòng này?')">Xóa</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center">Chưa có phòng nào.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Quản lý đặt phòng - Chủ nhà{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">📋 Quản lý đặt phòng</h1>
+
+    <div class="stats-bar" style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px;"><span>Chờ xác nhận:</span> <strong>{{ stats.cho_xac_nhan }}</strong></div>
+        <div style="background: #d4edda; padding: 15px; border-radius: 8px;"><span>Đã xác nhận:</span> <strong>{{ stats.da_xac_nhan }}</strong></div>
+        <div style="background: #e2e3e5; padding: 15px; border-radius: 8px;"><span>Tổng đơn:</span> <strong>{{ stats.total }}</strong></div>
+    </div>
+
+    {% if not grouped_bookings %}
+    <div class="empty-state" style="text-align: center; padding: 40px;">
+        <div style="font-size: 4em; margin-bottom: 20px;">📭</div>
+        <h3>Chưa có đơn đặt phòng nào</h3>
+        <p>Các đơn đặt phòng sẽ hiển thị ở đây khi khách hàng đặt phòng của bạn</p>
+    </div>
+    {% else %}
+    <div class="bookings-grouped">
+        {% for customer_id, group in grouped_bookings.items() %}
+        <div class="customer-booking-group" style="background: white; margin-bottom: 20px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div class="customer-header" style="padding: 20px; background: #f8f9fa; cursor: pointer;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                <strong>{{ group.customer_info.ten }}</strong> - {{ group.bookings|length }} đơn
+                <br><small>📧 {{ group.customer_info.email }} {% if group.customer_info.sdt %}📞 {{ group.customer_info.sdt }}{% endif %}</small>
+            </div>
+            <div class="customer-details" style="padding: 20px;">
+                {% for booking in group.bookings %}
+                <div class="booking-item" style="border: 1px solid #eee; padding: 15px; margin-bottom: 10px; border-radius: 6px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span>Mã đơn: #{{ booking.id }}</span>
+                        <span style="background: {{ get_trang_thai_booking_info(booking.trang_thai).color }}; color: white; padding: 5px 10px; border-radius: 4px;">{{ get_trang_thai_booking_info(booking.trang_thai).text }}</span>
+                    </div>
+                    <div><strong>{{ booking.phong_tieu_de }}</strong></div>
+                    <div>💰 {{ "{:,.0f}".format(booking.phong_gia) }} đ/tháng | 📍 {{ booking.phong_dia_chi }}</div>
+                    {% if booking.so_dien_thoai_lien_he %}<div>📞 SĐT: {{ booking.so_dien_thoai_lien_he }}</div>{% endif %}
+                    {% if booking.tin_nhan %}<div>💬 {{ booking.tin_nhan }}</div>{% endif %}
+                    <div style="margin-top: 10px;">
+                        {% if booking.trang_thai == 'cho_xac_nhan' %}
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                            <button type="submit" name="action" value="approve" class="btn btn-sm btn-success" onclick="return confirm('Xác nhận đơn này?')">✓ Xác nhận</button>
+                        </form>
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                            <button type="submit" name="action" value="reject" class="btn btn-sm btn-danger" onclick="return confirm('Từ chối đơn này?')">✕ Từ chối</button>
+                        </form>
+                        {% else %}
+                        <span>Đơn đã được xử lý</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

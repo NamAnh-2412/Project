@@ -1,0 +1,28 @@
+# BTL
+_tmp_teacher_pdfs/
+_tmp_parse_sb.js
+_tmp_hash/
+_tmp_ui_check/
+
+# Java
+vexemphim-api/target/
+vexemphim-api/uploads/*
+!vexemphim-api/uploads/.gitkeep
+*.class
+*.jar
+*.war
+.mvn/wrapper/maven-wrapper.jar
+
+# Node
+web-client/node_modules/
+web-client/dist/
+web-client/.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+Thumbs.db
+Desktop.ini

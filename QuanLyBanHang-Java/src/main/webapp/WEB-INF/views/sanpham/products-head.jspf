@@ -1,0 +1,6 @@
+<%@ page pageEncoding="UTF-8" %>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${pageTitle}</title>
+<%@ include file="/WEB-INF/views/layout/base.jspf" %>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/products.css"/>

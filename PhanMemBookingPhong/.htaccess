@@ -1,0 +1,18 @@
+# Bảo vệ thư mục config
+<FilesMatch "^(database|config)\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Bật error reporting (tắt trong production)
+# php_flag display_errors on
+
+# UTF-8 encoding
+AddDefaultCharset UTF-8
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+

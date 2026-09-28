@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Chỉnh sửa phòng - Booking Phòng Trọ{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Chỉnh sửa phòng</h1>
+
+    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+    <form method="POST" action="">
+        <div class="form-group">
+            <label>Tiêu đề phòng *</label>
+            <input type="text" name="tieu_de" required value="{{ phong.tieu_de }}">
+        </div>
+        <div class="form-group">
+            <label>Địa chỉ *</label>
+            <textarea name="dia_chi" required>{{ phong.dia_chi }}</textarea>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Quận/Huyện</label>
+                <input type="text" name="quan_huyen" value="{{ phong.quan_huyen or '' }}">
+            </div>
+            <div class="form-group">
+                <label>Giá (đồng/tháng) *</label>
+                <input type="number" name="gia" min="0" required value="{{ phong.gia }}">
+            </div>
+            <div class="form-group">
+                <label>Diện tích (m²)</label>
+                <input type="number" name="dien_tich" min="0" step="0.1" value="{{ phong.dien_tich or '' }}">
+            </div>
+            <div class="form-group">
+                <label>Trạng thái</label>
+                <select name="trang_thai">
+                    <option value="con_trong" {% if phong.trang_thai == 'con_trong' %}selected{% endif %}>Còn trống</option>
+                    <option value="da_thue" {% if phong.trang_thai == 'da_thue' %}selected{% endif %}>Đã thuê</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Mô tả</label>
+            <textarea name="mo_ta" rows="5">{{ phong.mo_ta or '' }}</textarea>
+        </div>
+        <div class="form-group">
+            <label>Tiện ích</label>
+            <div class="amenities-checkboxes">
+                {% for ti in all_tien_ich %}
+                <label class="checkbox-label">
+                    <input type="checkbox" name="tien_ich" value="{{ ti.id }}" {% if ti.id in current_tien_ich %}checked{% endif %}>
+                    {% if ti.icon %}<span class="amenity-icon">{{ ti.icon }}</span>{% endif %}
+                    {{ ti.ten }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Cập nhật</button>
+        <a href="{{ url_for('admin.manage_rooms') }}" class="btn btn-secondary">Quay lại</a>
+    </form>
+</div>
+{% endblock %}

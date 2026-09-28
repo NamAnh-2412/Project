@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Chi tiết Người thuê - Admin{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('admin.manage_nguoi_thue') }}" class="btn btn-secondary">← Quay lại</a>
+    </div>
+
+    <h1>👥 Chi tiết Người thuê</h1>
+
+    <!-- Thông tin người thuê -->
+    <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
+        <h2>Thông tin cá nhân</h2>
+        <table class="table" style="margin-top: 15px;">
+            <tr><th width="200">ID:</th><td>{{ nguoi_thue.id }}</td></tr>
+            <tr><th>Họ tên:</th><td><strong>{{ nguoi_thue.ho_ten or 'N/A' }}</strong></td></tr>
+            <tr><th>Email:</th><td>{{ nguoi_thue.email }}</td></tr>
+            <tr><th>Số điện thoại:</th><td>{{ nguoi_thue.so_dien_thoai or 'N/A' }}</td></tr>
+            <tr><th>Ngày đăng ký:</th><td>{{ nguoi_thue.ngay_tao.strftime('%d/%m/%Y %H:%M') if nguoi_thue.ngay_tao else 'N/A' }}</td></tr>
+        </table>
+    </div>
+
+    <!-- Thống kê -->
+    <div class="stats-grid" style="margin-bottom: 30px;">
+        <div class="stat-card" style="border-left: 4px solid #3498db;">
+            <h3>Tổng số booking</h3>
+            <p class="stat-number">{{ stats.total_bookings }}</p>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid #f39c12;">
+            <h3>Chờ xác nhận</h3>
+            <p class="stat-number">{{ stats.cho_xac_nhan }}</p>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid #27ae60;">
+            <h3>Đã xác nhận</h3>
+            <p class="stat-number">{{ stats.da_xac_nhan }}</p>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid #e74c3c;">
+            <h3>Đã hủy</h3>
+            <p class="stat-number">{{ stats.da_huy }}</p>
+        </div>
+    </div>
+
+    <!-- Danh sách booking -->
+    <h2>Danh sách booking ({{ bookings|length }})</h2>
+    {% if not bookings %}
+    <p class="no-results">Người thuê này chưa có booking nào.</p>
+    {% else %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr><th>ID</th><th>Phòng</th><th>Chủ nhà</th><th>Giá</th><th>Trạng thái</th><th>Ngày đặt</th><th>Hành động</th></tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                {% set trang_thai_info = get_trang_thai_booking_info(booking.trang_thai) %}
+                <tr>
+                    <td>{{ booking.id }}</td>
+                    <td>
+                        <strong>{{ booking.phong_tieu_de }}</strong>
+                        <br><small style="color: #666;">{{ booking.phong_dia_chi[:40] }}{% if booking.phong_dia_chi|length > 40 %}...{% endif %}</small>
+                    </td>
+                    <td>
+                        <strong>{{ booking.chu_nha_ten or 'N/A' }}</strong>
+                        <br><small style="color: #666;">{{ booking.chu_nha_email or '' }}</small>
+                    </td>
+                    <td><strong style="color: #e74c3c;">{{ "{:,.0f}".format(booking.phong_gia) }} đ</strong></td>
+                    <td>
+                        <span class="badge" style="background: {{ trang_thai_info.color }}; color: white; padding: 5px 10px; border-radius: 4px;">{{ trang_thai_info.text }}</span>
+                    </td>
+                    <td>{{ booking.ngay_tao.strftime('%d/%m/%Y %H:%M') if booking.ngay_tao else '' }}</td>
+                    <td>
+                        <a href="{{ url_for('rooms.room_detail', room_id=booking.phong_id) }}" target="_blank" class="btn btn-primary btn-sm">Xem phòng</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

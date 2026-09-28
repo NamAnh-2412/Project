@@ -1,0 +1,17 @@
+<%@ page pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<div class="chart-card">
+    <div class="chart-title">Lượng khách hàng theo ngày trong tuần</div>
+    <div class="chart-placeholder">
+        <c:forEach var="bar" items="${weeklyOrders}">
+            <div class="chart-bar-wrapper">
+                <div class="chart-bar" style="height:${bar.height}px" title="${bar.label}: ${bar.value} đơn hàng">
+                    <c:if test="${bar.value > 0}">
+                        <span class="bar-value">${bar.value}</span>
+                    </c:if>
+                </div>
+                <div class="bar-label">${bar.label}</div>
+            </div>
+        </c:forEach>
+    </div>
+</div>

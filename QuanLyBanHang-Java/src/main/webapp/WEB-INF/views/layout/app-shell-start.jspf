@@ -1,0 +1,5 @@
+<%@ page pageEncoding="UTF-8" %>
+<div class="app-wrapper">
+    <%@ include file="/WEB-INF/views/layout/sidebar.jspf" %>
+    <div class="main-content">
+        <div class="main-inner">

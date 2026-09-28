@@ -1,0 +1,466 @@
+/* ========================================
+   ROOMS - Grid, Cards, Detail
+   ======================================== */
+
+/* Layout 2 cột: Sidebar + Content */
+.rooms-layout {
+    display: flex;
+    gap: 30px;
+    margin: 30px 0;
+    align-items: flex-start;
+}
+
+/* Filter Sidebar (Bên trái) */
+.filter-sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 20px;
+}
+
+.filter-sidebar-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.filter-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.btn-reset-filter {
+    padding: 6px 12px;
+    background: #e74c3c;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: all 0.3s;
+}
+
+.btn-reset-filter:hover {
+    background: #c0392b;
+}
+
+.filter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.filter-block {
+    padding: 20px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.filter-block:last-child {
+    border-bottom: none;
+}
+
+.filter-block-title {
+    display: block;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.filter-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+}
+
+.filter-range {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-range .filter-input {
+    flex: 1;
+}
+
+.range-separator {
+    color: #7f8c8d;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.filter-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.filter-option:hover {
+    background: #f8f9fa;
+}
+
+.filter-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #3498db;
+}
+
+.filter-option span {
+    font-size: 14px;
+    color: #2c3e50;
+    flex: 1;
+}
+
+.btn-filter-submit {
+    width: 100%;
+    padding: 12px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 20px;
+}
+
+.btn-filter-submit:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+/* Rooms Content (Bên phải) */
+.rooms-content {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Rooms Grid */
+.rooms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+}
+    color: white;
+    border-color: #3498db;
+}
+
+/* Rooms grid */
+.rooms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
+    margin: 30px 0;
+}
+
+.room-card {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.room-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.room-image {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+}
+
+.room-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.room-status {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+}
+
+.status-con_trong {
+    background-color: #27ae60;
+}
+
+.status-da_thue {
+    background-color: #e74c3c;
+}
+
+/* Favorite button */
+.favorite-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.favorite-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
+}
+
+.favorite-btn.active {
+    background: rgba(231, 76, 60, 0.9);
+    color: white;
+}
+
+.favorite-btn-large {
+    padding: 10px 20px;
+    border: 2px solid #e74c3c;
+    border-radius: 4px;
+    background: white;
+    color: #e74c3c;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.favorite-btn-large:hover {
+    background: #e74c3c;
+    color: white;
+}
+
+.favorite-btn-large.active {
+    background: #e74c3c;
+    color: white;
+}
+
+.header-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.favorite-date {
+    color: #7f8c8d;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.room-info {
+    padding: 20px;
+}
+
+.room-info h3 {
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.room-price {
+    font-size: 20px;
+    font-weight: bold;
+    color: #e74c3c;
+    margin: 10px 0;
+}
+
+.room-address {
+    color: #7f8c8d;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.room-area {
+    color: #7f8c8d;
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.no-results {
+    text-align: center;
+    padding: 50px;
+    color: #7f8c8d;
+    font-size: 18px;
+}
+
+/* Room detail */
+.room-detail {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin: 20px 0;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #3498db;
+    text-decoration: none;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.room-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.room-images {
+    margin-bottom: 30px;
+}
+
+.main-image {
+    width: 100%;
+    height: 500px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.thumbnail-images {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.thumbnail-images img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: border-color 0.3s;
+}
+
+.thumbnail-images img:hover,
+.thumbnail-images img.active {
+    border-color: #3498db;
+}
+
+.room-detail-content {
+    margin-top: 30px;
+}
+
+.info-box {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.info-box h3 {
+    margin-bottom: 15px;
+    color: #2c3e50;
+}
+
+.room-price-large {
+    font-size: 28px;
+    font-weight: bold;
+    color: #e74c3c;
+}
+
+.info-box ul {
+    list-style: none;
+    padding: 0;
+}
+
+.info-box li {
+    padding: 8px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.info-box li:last-child {
+    border-bottom: none;
+}
+
+.admin-actions {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid #ddd;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* Booking box styling */
+.booking-box {
+    background: linear-gradient(135deg, #f8fff9 0%, #e8f5e9 100%);
+    border: 2px solid #27ae60;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.booking-box h3 {
+    margin-top: 0;
+}
+
+.booking-box .btn-success {
+    box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
+    transition: all 0.3s;
+}
+
+.booking-box .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(39, 174, 96, 0.4);
+}
+

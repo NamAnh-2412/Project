@@ -1,0 +1,13 @@
+---
+description: Thứ tự và phạm vi suất chiếu CineVe — admin trước, trang khách sau
+alwaysApply: true
+---
+
+# Suất chiếu
+
+- Đang làm **admin** `/admin/showtimes` trước. **Không** nâng lịch chiếu trang khách (`MovieDetailPage` / chip giờ) cho đến khi admin xong và user yêu cầu.
+- Phương án đã chốt: `docs/11-phuong-an-suat-chieu.md`.
+- Admin = lịch **một ngày theo phòng** (tạo / sửa / hủy / occupancy). Không canvas Vista, không copy tuần, không 2D/3D, không đa rạp.
+- Public `GET /api/showtimes` vẫn ẩn suất đã qua. Admin mới được `includePast` + `status` + occupancy trên list.
+- Hủy suất = `CANCELLED`. Không xóa cứng. Đã bán vé thì không sửa/hủy (`HAS_TICKETS`).
+- Phòng lấy từ `GET /api/rooms`, không hardcode id 1/2.

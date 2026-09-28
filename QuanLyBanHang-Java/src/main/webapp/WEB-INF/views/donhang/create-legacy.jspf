@@ -1,0 +1,223 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+            <div class="header-bar-taodon">
+                <div class="left">
+                    <a href="${pageContext.request.contextPath}/don-hang" class="btn-back"><i class="fa fa-arrow-left"></i> Về danh sách đơn</a>
+                    <h1><span class="ic"><i class="fas fa-plus-circle"></i></span> TẠO ĐƠN HÀNG</h1>
+                </div>
+                <button class="btn btn-primary" type="button" id="btnAddNewOrder" style="padding:10px 20px;display:flex;align-items:center;gap:8px">
+                    <i class="fas fa-plus"></i> Thêm đơn hàng
+                </button>
+            </div>
+
+            <c:if test="${not empty flashMessage}">
+                <div class="alert alert-danger" style="margin:10px 20px 0 20px;flex-shrink:0;">${flashMessage}</div>
+            </c:if>
+
+            <div class="order-cards-container">
+                <div class="order-cards" id="orderTabs"></div>
+            </div>
+
+            <div class="order-layout">
+                <div class="panel panel-categories">
+                    <div class="panel-header">
+                        <i class="fas fa-list"></i>
+                        <strong>Nhom san pham</strong>
+                    </div>
+                    <div class="cat-list">
+                        <c:forEach var="cat" items="${cats}">
+                            <div class="cat-item ${activeCat == cat.id ? 'active' : ''}"
+                                 onclick="location.href='${pageContext.request.contextPath}/don-hang/create?cat=${cat.id}'">
+                                ${cat.tenDanhMuc}
+                            </div>
+                        </c:forEach>
+                        <c:if test="${empty cats}">
+                            <div class="empty-state">Chưa có nhóm</div>
+                        </c:if>
+                    </div>
+                </div>
+
+                <div class="panel panel-products">
+                    <div class="panel-header">
+                        <i class="fas fa-box"></i>
+                        <strong>Sản phẩm</strong>
+                        <input type="text" id="searchProd" class="search-input" placeholder="Tìm sản phẩm...">
+                    </div>
+                    <div class="prod-grid" id="prodGrid">
+                        <c:forEach var="p" items="${prod}">
+                            <div class="prod-card" data-id="${p.id}" data-name="${p.tenSanPham}" data-price="${p.giaBan}">
+                                <c:if test="${not empty p.anhUrl}">
+                                    <div class="prod-image">
+                                        <img src="${pageContext.request.contextPath}/${p.anhUrl}"
+                                             alt="${p.tenSanPham}">
+                                    </div>
+                                </c:if>
+                                <div class="prod-name">${p.tenSanPham}</div>
+                                <div class="prod-price"><fmt:formatNumber value="${p.giaBan}" pattern="#,###"/>₫</div>
+                            </div>
+                        </c:forEach>
+                        <c:if test="${empty prod}">
+                            <div class="empty-state">Không có sản phẩm.</div>
+                        </c:if>
+                    </div>
+                </div>
+
+                <div class="panel panel-cart">
+                    <form method="post" id="orderForm">
+                        <input type="hidden" name="action" value="create_order">
+                        <input type="hidden" name="items" id="itemsInput">
+                        <input type="hidden" name="phuong_thuc_thanhtoan" id="phuongThucThanhToan" value="tien_mat">
+                        <div class="customer-info">
+                            <div class="panel-header customer-panel-header">
+                                <div class="customer-panel-title">
+                                    <i class="fas fa-user"></i>
+                                    <strong>Thong tin khach</strong>
+                                </div>
+                                <button type="button" class="btn-find-customer" id="btnFindCustomer">
+                                    <i class="fas fa-search"></i> Tìm khách
+                                </button>
+                            </div>
+                            <div id="customerMatchedBadge" class="customer-matched-badge" style="display:none;">
+                                <i class="fas fa-star"></i>
+                                <span>Khach lau dai</span>
+                                <span class="customer-order-count" id="customerOrderCount">0 don truoc</span>
+                            </div>
+                            <div class="customer-inputs customer-search-wrapper">
+                                <input name="ten_khachhang" id="tenKhachhang" placeholder="Tên khách (mặc định Khách lẻ)" class="input-field" autocomplete="off">
+                                <input name="sdt_khachhang" id="sdtKhachhang" placeholder="SĐT" class="input-field input-phone" autocomplete="off">
+                                <div id="customerSuggestions" class="autocomplete-suggestions"></div>
+                            </div>
+                        </div>
+                        <div class="cart" id="cart"></div>
+                        <div class="sum">
+                            <div class="total-row">
+                                <span>Tổng tiền:</span>
+                                <b id="total">0₫</b>
+                            </div>
+                            <div class="cart-actions">
+                                <button class="btn btn-secondary btn-save-order" type="button" id="btnLuuDon">
+                                    <span class="btn-text"><i class="fas fa-save"></i> Lưu đơn</span>
+                                    <span class="btn-loading" style="display:none;"></span>
+                                </button>
+                                <button class="btn btn-secondary" type="button" onclick="orderCreate.printTempBill()">
+                                    <i class="fas fa-print"></i> In tạm tính
+                                </button>
+                                <button class="btn btn-primary btn-payment" type="button" id="btnThanhToan">
+                                    <span class="btn-text">Thanh toán</span>
+                                    <span class="btn-loading" style="display:none;"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+<div class="payment-modal" id="paymentModal">
+    <div class="payment-dialog">
+        <div class="payment-header">
+            <h2>Thanh toán</h2>
+            <button class="payment-close" type="button" onclick="orderCreate.closePaymentModal()">×</button>
+        </div>
+        <div class="payment-body">
+            <div class="payment-left">
+                <div class="payment-methods">
+                    <button type="button" class="payment-method active" data-method="tien_mat" onclick="orderCreate.selectPaymentMethod('tien_mat')">
+                        <i class="fas fa-money-bill-wave"></i> Tiền mặt
+                    </button>
+                    <button type="button" class="payment-method" data-method="chuyen_khoan" onclick="orderCreate.selectPaymentMethod('chuyen_khoan')">
+                        <i class="fas fa-university"></i> Chuyển khoản
+                    </button>
+                    <button type="button" class="payment-method" data-method="the" onclick="orderCreate.selectPaymentMethod('the')">
+                        <i class="fas fa-credit-card"></i> Thẻ
+                    </button>
+                    <button type="button" class="payment-method" data-method="app_online" onclick="orderCreate.selectPaymentMethod('app_online')">
+                        <i class="fas fa-mobile-alt"></i> App online
+                    </button>
+                </div>
+            </div>
+            <div class="payment-right">
+                <div class="payment-info">
+                    <div class="payment-row">
+                        <span>Tổng tiền (1)</span>
+                        <strong id="paymentTotal" style="color:#f44336;">0₫</strong>
+                    </div>
+                    <div class="payment-row" id="customerPaidRow" style="display:none;">
+                        <label>Khách trả *</label>
+                        <input type="text" id="customerPaid" placeholder="0" readonly style="text-align:right;font-size:18px;font-weight:600;padding:8px;border:1px solid #d2d8ea;border-radius:6px;width:150px;">
+                    </div>
+                    <div class="payment-row" id="changeRow" style="display:none;">
+                        <span>Tiền thừa</span>
+                        <strong id="paymentChange" style="color:#4caf50;">0₫</strong>
+                    </div>
+                </div>
+                <div class="payment-numpad" id="paymentNumpad" style="display:none;">
+                    <div class="numpad-grid">
+                        <button type="button" class="numpad-btn" onclick="orderCreate.numpadInput('7')">7</button>
+                        <button type="button" class="numpad-btn" onclick="orderCreate.numpadInput('8')">8</button>
+                        <button type="button" class="numpad-btn" onclick="orderCreate.numpadInput('9')">9</button>
+                        <button type="button" class="numpad-btn" onclick="orderCreate.numpadInput('4')">4</button>
+                        <button type="button" class="numpad-btn" onclick="orderCreate.numpadInput('5')">5</button>
+                        <button type="button" class="numpad-btn" onclick="orderCreate.numpadInput('6')">6</button>
+                        <button type="button" class="numpad-btn" onclick="orderCreate.numpadInput('1')">1</button>
+                        <button type="button" class="numpad-btn" onclick="orderCreate.numpadInput('2')">2</button>
+                        <button type="button" class="numpad-btn" onclick="orderCreate.numpadInput('3')">3</button>
+                        <button type="button" class="numpad-btn" onclick="orderCreate.numpadInput('0')">0</button>
+                        <button type="button" class="numpad-btn" onclick="orderCreate.numpadInput('00')">00</button>
+                        <button type="button" class="numpad-btn" onclick="orderCreate.numpadInput('000')">000</button>
+                        <button type="button" class="numpad-btn numpad-clear" onclick="orderCreate.numpadClear()">C</button>
+                    </div>
+                    <div class="quick-amounts">
+                        <button type="button" class="quick-btn" onclick="orderCreate.setQuickAmount(10000)">10,000</button>
+                        <button type="button" class="quick-btn" onclick="orderCreate.setQuickAmount(20000)">20,000</button>
+                        <button type="button" class="quick-btn" onclick="orderCreate.setQuickAmount(50000)">50,000</button>
+                        <button type="button" class="quick-btn" onclick="orderCreate.setQuickAmount(100000)">100,000</button>
+                        <button type="button" class="quick-btn" onclick="orderCreate.setQuickAmount(200000)">200,000</button>
+                        <button type="button" class="quick-btn" onclick="orderCreate.setQuickAmount(500000)">500,000</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="payment-footer">
+            <button type="button" class="btn btn-secondary" onclick="orderCreate.closePaymentModal()">ĐÓNG</button>
+            <button type="button" class="btn btn-primary" id="btnConfirmPayment" onclick="orderCreate.confirmPayment()">
+                <span class="btn-text">XÁC NHẬN</span>
+                <span class="btn-loading" style="display:none;"></span>
+            </button>
+        </div>
+        <input type="hidden" id="selectedPaymentMethod" value="tien_mat">
+    </div>
+</div>
+
+<div class="customer-find-modal" id="customerFindModal">
+    <div class="customer-find-dialog">
+        <div class="customer-find-header">
+            <h3><i class="fas fa-users"></i> Tìm khách hàng</h3>
+            <button type="button" class="customer-find-close" id="btnCloseFindCustomer">&times;</button>
+        </div>
+        <div class="customer-find-body">
+            <input type="text" id="customerFindInput" class="input-field" placeholder="Nhap ten hoac SDT..." autocomplete="off">
+            <div id="customerFindResults" class="customer-find-results"></div>
+        </div>
+    </div>
+</div>
+
+<div class="options-modal" id="optionsModal">
+    <div class="options-card">
+        <h3>Tuy chon mon</h3>
+        <div class="row">
+            <select id="optSugar"><option value="0">Duong binh thuong</option><option value="-30">Duong 70%</option><option value="-50">Duong 50%</option><option value="100">Duong 100%</option></select>
+            <select id="optIce"><option value="0">Da binh thuong</option><option value="-30">It da</option><option value="-100">Khong da</option></select>
+        </div>
+        <div style="text-align:right"><button type="button" class="btn btn-secondary" onclick="orderCreate.closeOptions()">Dong</button> <button type="button" class="btn btn-primary" onclick="orderCreate.applyOptions()">Ap dung</button></div>
+    </div>
+</div>
+
+<div id="tempBillPrint" class="temp-bill-print" aria-hidden="true"></div>
+
+<script>
+  window.BASE_PATH = window.APP_BASE_PATH || '${pageContext.request.contextPath}/';
+  window.DEFAULT_PAYMENT_METHOD = '${defaultPaymentMethod}';
+  window.SHOP_NAME = '${shopName}';
+</script>
+<script src="${pageContext.request.contextPath}/js/orders/create.js"></script>

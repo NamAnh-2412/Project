@@ -1,0 +1,82 @@
+/* ========================================
+   RESPONSIVE STYLES
+   ======================================== */
+
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .logo {
+        min-width: auto;
+        max-width: 100%;
+        text-align: center;
+        margin-right: 0;
+        width: 100%;
+    }
+    
+    .header-right {
+        flex-direction: column;
+        width: 100%;
+        margin-left: 0;
+    }
+    
+    .header-user-section {
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .nav {
+        flex-direction: column;
+        width: 100%;
+        position: relative;
+        margin: 0;
+        padding: 0;
+        max-width: 100%;
+        flex: 1 1 auto;
+    }
+    
+    .nav > * + * {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+    
+    .rooms-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .main-image {
+        height: 300px;
+    }
+    
+    .search-form {
+        flex-direction: column;
+    }
+    
+    .rooms-layout {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .filter-sidebar {
+        width: 100%;
+        position: relative;
+        top: 0;
+    }
+    
+    .filter-range {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .range-separator {
+        display: none;
+    }
+    
+    .rooms-grid {
+        grid-template-columns: 1fr;
+    }
+}
+

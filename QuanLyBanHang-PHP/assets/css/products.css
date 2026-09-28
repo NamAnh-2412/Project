@@ -1,0 +1,23 @@
+/* Products Module Styles */
+
+body.products-page {
+  background: #f8fafc;
+}
+
+.header-bar-sp .ic {
+  color: #628eea;
+}
+
+.header-bar-nglieu .ic {
+  font-size: 1.63em;
+  color: #f97316;
+}
+
+.header-bar-thucdon .ic {
+  color: #5fa9fa;
+}
+
+.header-bar-nhom .ic {
+  color: #fa995f;
+}
+
