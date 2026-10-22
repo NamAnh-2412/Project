@@ -9,19 +9,17 @@
     <h1 class="page-title">Tổng quan</h1>
     <p class="page-subtitle mb-4">Việc cần làm: nhận đơn online, giao / trả đồ, theo dõi kho.</p>
 
-    <div class="row g-3 mb-3">
+    <div class="vp-grid vp-grid--fit mb-3">
         @foreach ([
             ['Đơn hàng hôm nay', $todayOrderCount, 'Tất cả đơn tạo hôm nay, trừ hủy'],
             ['Đơn mua', $todaySaleOrders, 'Chỉ bán — hôm nay'],
             ['Đơn thuê', $todayRentalOrders, 'Chỉ thuê — hôm nay'],
             ['Đơn hỗn hợp', $todayMixedOrders, 'Mua và thuê — hôm nay'],
         ] as [$label, $value, $hint])
-            <div class="col-md-3">
-                <div class="admin-card p-4 h-100">
-                    <div class="text-muted small">{{ $label }}</div>
-                    <div class="fs-3 fw-bold">{{ $value }}</div>
-                    <div class="small text-muted mt-1">{{ $hint }}</div>
-                </div>
+            <div class="admin-card p-4 h-100">
+                <div class="text-muted small">{{ $label }}</div>
+                <div class="fs-3 fw-bold">{{ $value }}</div>
+                <div class="small text-muted mt-1">{{ $hint }}</div>
             </div>
         @endforeach
     </div>
@@ -32,13 +30,13 @@
         <canvas id="week-revenue-chart" height="90"></canvas>
     </div>
 
-    <div class="row g-3 mb-3">
+    <div class="vp-grid vp-grid--fit mb-3">
         @foreach ([
             ['Đơn online', $onlinePendingOrders, route('admin.orders.index', ['status' => 'pending', 'channel' => 'online', 'date' => 'all']), $onlinePendingOrders > 0],
             ['Cần giao đồ', $handoverBookings, route('admin.rentals.index', ['status' => 'confirmed']), $handoverBookings > 0],
             ['Quá hạn trả', $overdueBookings, route('admin.rentals.index', ['status' => 'overdue']), $overdueBookings > 0],
         ] as [$label, $value, $href, $alert])
-            <div class="col-md-4">
+            <div>
                 <a href="{{ $href }}" class="text-decoration-none text-reset">
                     <div class="admin-card p-4 h-100 {{ $alert && $label === 'Quá hạn trả' ? 'border-danger' : '' }}">
                         <div class="text-muted small">{{ $label }}</div>
@@ -47,15 +45,25 @@
                 </a>
             </div>
         @endforeach
+        @if (auth()->user()->isOwnerAdmin())
+            <div>
+                <a href="{{ route('admin.inventory.index') }}" class="text-decoration-none text-reset">
+                    <div class="admin-card p-4 h-100 {{ $pendingStockReceipts > 0 ? 'border-warning' : '' }}">
+                        <div class="text-muted small">Phiếu nhập chờ duyệt</div>
+                        <div class="fs-3 fw-bold">{{ $pendingStockReceipts }}</div>
+                    </div>
+                </a>
+            </div>
+        @endif
     </div>
 
-    <div class="row g-3 mb-4">
+    <div class="vp-grid vp-grid--fit mb-4">
         @foreach ([
             ['Đang thuê', $activeBookings, route('admin.rentals.index', ['status' => 'active'])],
-            ['SKU bán tồn thấp', $lowSaleCount, route('admin.inventory.index')],
-            ['SKU thuê hết món', $emptyRentalCount, route('admin.inventory.index')],
+            ['Sắp hết hàng bán', $lowSaleCount, route('admin.inventory.index')],
+            ['SKU thuê sắp hết', $lowRentalCount, route('admin.inventory.index')],
         ] as [$label, $value, $href])
-            <div class="col-md-4">
+            <div>
                 <a href="{{ $href }}" class="text-decoration-none text-reset">
                     <div class="admin-card p-4 h-100">
                         <div class="text-muted small">{{ $label }}</div>
@@ -66,8 +74,8 @@
         @endforeach
     </div>
 
-    <div class="row g-3 mb-4">
-        <div class="col-lg-6">
+    <div class="vp-split mb-4">
+        <div>
             <div class="admin-card">
                 <div class="p-3 fw-semibold d-flex justify-content-between align-items-center">
                     <span>Đơn online</span>
@@ -90,7 +98,7 @@
                 </table>
             </div>
         </div>
-        <div class="col-lg-6">
+        <div>
             <div class="admin-card">
                 <div class="p-3 fw-semibold d-flex justify-content-between align-items-center">
                     <span>Lịch cần giao / quá hạn</span>
@@ -124,20 +132,21 @@
         </div>
     </div>
 
-    @if ($lowSaleRows->isNotEmpty() || $emptyRentalRows->isNotEmpty())
-        <div class="row g-3">
+    @if ($lowSaleRows->isNotEmpty() || $lowRentalRows->isNotEmpty())
+        <div class="vp-split">
             @if ($lowSaleRows->isNotEmpty())
-                <div class="col-lg-6">
+                <div>
                     <div class="admin-card">
-                        <div class="p-3 fw-semibold">SKU bán tồn thấp</div>
+                        <div class="p-3 fw-semibold">Sắp hết hàng bán</div>
                         <table class="table admin-table mb-0">
-                            <thead><tr><th>Mã SKU</th><th>Sản phẩm</th><th>Còn</th></tr></thead>
+                            <thead><tr><th>Mã SKU</th><th>Sản phẩm</th><th>Còn bán</th><th></th></tr></thead>
                             <tbody>
                             @foreach ($lowSaleRows as $stock)
                                 <tr>
                                     <td>{{ $stock->variant?->sku }}</td>
                                     <td>{{ $stock->variant?->product?->name }}</td>
-                                    <td>{{ $stock->quantity_on_hand }}</td>
+                                    <td>{{ max(0, (int) $stock->quantity_on_hand - (int) $stock->quantity_reserved) }}</td>
+                                    <td>@include('admin.inventory._suspend', ['product' => $stock->variant?->product])</td>
                                 </tr>
                             @endforeach
                             </tbody>
@@ -145,17 +154,19 @@
                     </div>
                 </div>
             @endif
-            @if ($emptyRentalRows->isNotEmpty())
-                <div class="col-lg-6">
+            @if ($lowRentalRows->isNotEmpty())
+                <div>
                     <div class="admin-card">
-                        <div class="p-3 fw-semibold">SKU thuê hết món sẵn sàng</div>
+                        <div class="p-3 fw-semibold">Sắp hết món thuê</div>
                         <table class="table admin-table mb-0">
-                            <thead><tr><th>Mã SKU</th><th>Sản phẩm</th></tr></thead>
+                            <thead><tr><th>Mã SKU</th><th>Sản phẩm</th><th>Sẵn sàng</th><th></th></tr></thead>
                             <tbody>
-                            @foreach ($emptyRentalRows as $variant)
+                            @foreach ($lowRentalRows as $variant)
                                 <tr>
                                     <td>{{ $variant->sku }}</td>
                                     <td>{{ $variant->product?->name }}</td>
+                                    <td>{{ (int) $variant->available_items }}</td>
+                                    <td>@include('admin.inventory._suspend', ['product' => $variant->product])</td>
                                 </tr>
                             @endforeach
                             </tbody>

@@ -2,6 +2,7 @@
 
 namespace App\Gateway\Services;
 
+use App\Domain\Coupon\Models\Coupon;
 use App\Domain\Coupon\Services\CouponService;
 use App\Domain\Inventory\Services\AvailabilityService;
 use App\Domain\Inventory\Services\InventoryWriter;
@@ -47,8 +48,39 @@ class CheckoutOrchestrator
     {
         $channel = OrderChannel::from($payload['channel'] ?? OrderChannel::Online->value);
         $customer = $this->resolveCustomer($actor, $channel, $payload);
-
         $prepared = $this->prepareLines($payload['lines'] ?? []);
+        [$merchandise, $rental] = $this->couponBase($prepared);
+        [$coupon, $discount] = $this->quoteCoupon($payload, $merchandise, $rental);
+        $quoted = $this->quoteShipping($channel, $payload);
+
+        $order = null;
+
+        try {
+            $order = $this->persistCheckout($customer, $channel, $payload, $quoted, $coupon, $discount, $prepared);
+            $this->lockAndBook($customer->id, $order);
+            $this->collectCheckoutPayments($order, $channel, $payload, $quoted['shipping_method']);
+            $this->redeemCoupon($coupon, $order, $discount);
+            $this->notifications->notifyOrderConfirmedSafely($customer, $order);
+
+            return $order->load('items');
+        } catch (Throwable $e) {
+            if ($order !== null) {
+                $this->compensate($order);
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Chỉ dòng bán tính vào tiền hàng khi xét mã giảm. Dòng thuê và dòng in cộng vào tiền thuê.
+     * Số ghi trên đơn do OrderWriter tính lại: in nằm ở merchandise_total.
+     *
+     * @param  list<array<string, mixed>>  $prepared
+     * @return array{0: float, 1: float}
+     */
+    private function couponBase(array $prepared): array
+    {
         $merchandise = 0.0;
         $rental = 0.0;
         foreach ($prepared as $line) {
@@ -60,67 +92,73 @@ class CheckoutOrchestrator
             }
         }
 
+        return [$merchandise, $rental];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array{0: ?Coupon, 1: float}
+     */
+    private function quoteCoupon(array $payload, float $merchandise, float $rental): array
+    {
         $couponCode = trim((string) ($payload['coupon_code'] ?? ''));
-        $discount = 0.0;
-        $coupon = null;
-        if ($couponCode !== '') {
-            $quoted = $this->coupons->quote($couponCode, $merchandise, $rental);
-            $coupon = $quoted['coupon'];
-            $discount = $quoted['discount'];
+        if ($couponCode === '') {
+            return [null, 0.0];
         }
 
-        $quoted = $this->quoteShipping($channel, $payload);
+        $quoted = $this->coupons->quote($couponCode, $merchandise, $rental);
 
-        $order = null;
+        return [$quoted['coupon'], $quoted['discount']];
+    }
 
-        try {
-            $order = $this->orders->create($customer->id, [
-                'channel' => $channel,
-                'shipping_method' => $quoted['shipping_method']->value,
-                'shipping_name' => $payload['shipping_name'] ?? $customer->name,
-                'shipping_phone' => $payload['shipping_phone'] ?? $customer->phone,
-                'shipping_address' => $quoted['shipping_address'],
-                'to_province_id' => $quoted['to_province_id'],
-                'to_district_id' => $quoted['to_district_id'],
-                'to_ward_code' => $quoted['to_ward_code'],
-                'shipping_fee' => $quoted['shipping_fee'],
-                'fulfillment_status' => $quoted['fulfillment_status']->value,
-                'notes' => $payload['notes'] ?? null,
-                'coupon_code' => $coupon?->code,
-                'discount_total' => $discount,
-            ], $prepared);
+    /**
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $quoted
+     * @param  list<array<string, mixed>>  $prepared
+     */
+    private function persistCheckout(User $customer, OrderChannel $channel, array $payload, array $quoted, ?Coupon $coupon, float $discount, array $prepared): Order
+    {
+        return $this->orders->create($customer->id, [
+            'channel' => $channel,
+            'shipping_method' => $quoted['shipping_method']->value,
+            'shipping_name' => $payload['shipping_name'] ?? $customer->name,
+            'shipping_phone' => $payload['shipping_phone'] ?? $customer->phone,
+            'shipping_address' => $quoted['shipping_address'],
+            'to_province_id' => $quoted['to_province_id'],
+            'to_district_id' => $quoted['to_district_id'],
+            'to_ward_code' => $quoted['to_ward_code'],
+            'shipping_fee' => $quoted['shipping_fee'],
+            'fulfillment_status' => $quoted['fulfillment_status']->value,
+            'notes' => $payload['notes'] ?? null,
+            'coupon_code' => $coupon?->code,
+            'discount_total' => $discount,
+        ], $prepared);
+    }
 
-            $this->lockAndBook($customer->id, $order);
+    /** @param  array<string, mixed>  $payload */
+    private function collectCheckoutPayments(Order $order, OrderChannel $channel, array $payload, ShippingMethod $shipping): void
+    {
+        $method = $this->paymentMethodForChannel($channel, $payload['payment_method'] ?? null, $shipping);
+        $goods = max(0, round(
+            (float) $order->merchandise_total
+            + (float) $order->rental_total
+            - (float) $order->discount_total
+            + (float) $order->shipping_fee,
+            2
+        ));
+        $this->payments->createIntents(
+            $order->id,
+            $order->user_id,
+            $goods,
+            (float) $order->deposit_total,
+            $method,
+        );
+    }
 
-            $method = $this->paymentMethodForChannel($channel, $payload['payment_method'] ?? null, $quoted['shipping_method']);
-            $goods = max(0, round(
-                (float) $order->merchandise_total
-                + (float) $order->rental_total
-                - (float) $order->discount_total
-                + (float) $order->shipping_fee,
-                2
-            ));
-            $this->payments->createIntents(
-                $order->id,
-                $customer->id,
-                $goods,
-                (float) $order->deposit_total,
-                $method,
-            );
-
-            if ($coupon !== null && $discount > 0) {
-                $this->coupons->redeem($coupon, $order, $discount);
-            }
-
-            $this->notifications->notifyOrderConfirmedSafely($customer, $order);
-
-            return $order->load('items');
-        } catch (Throwable $e) {
-            if ($order !== null) {
-                $this->compensate($order);
-            }
-
-            throw $e;
+    private function redeemCoupon(?Coupon $coupon, Order $order, float $discount): void
+    {
+        if ($coupon !== null && $discount > 0) {
+            $this->coupons->redeem($coupon, $order, $discount);
         }
     }
 
@@ -317,6 +355,10 @@ class CheckoutOrchestrator
     private function lockAndBook(int $userId, Order $order): void
     {
         foreach ($order->items as $item) {
+            if ($item->line_type === LineType::Print) {
+                continue;
+            }
+
             if ($item->line_type === LineType::Sale) {
                 $this->inventory->reserveSale(
                     $item->product_variant_id,

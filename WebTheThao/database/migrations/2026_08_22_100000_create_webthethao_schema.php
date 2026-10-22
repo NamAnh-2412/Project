@@ -237,8 +237,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('email');
-            $table->enum('type', ['order_confirmed', 'rental_due_reminder', 'rental_overdue']);
-            $table->enum('channel', ['email'])->default('email');
+            $table->enum('type', ['order_confirmed', 'rental_due_reminder', 'rental_overdue', 'quote_updated']);
+            $table->enum('channel', ['email', 'in_app'])->default('email');
             $table->string('subject');
             $table->text('body');
             $table->json('payload')->nullable();

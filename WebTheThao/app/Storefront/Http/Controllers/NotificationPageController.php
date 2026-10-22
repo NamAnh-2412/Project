@@ -13,8 +13,12 @@ class NotificationPageController extends Controller
 
     public function index(Request $request): View
     {
+        $userId = (int) $request->user()->id;
+        $notifications = $this->notifications->listByUser($userId);
+        $this->notifications->markRead($userId);
+
         return view('storefront.notifications.index', [
-            'notifications' => $this->notifications->listByUser((int) $request->user()->id),
+            'notifications' => $notifications,
         ]);
     }
 }

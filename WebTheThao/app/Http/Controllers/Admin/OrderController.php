@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Domain\Order\Enums\OrderChannel;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Models\Order;
+use App\Domain\Payment\Enums\PaymentKind;
+use App\Domain\Payment\Enums\PaymentStatus;
 use App\Domain\Order\Services\OrderWriter;
 use App\Domain\Payment\Services\PaymentWriter;
 use App\Domain\Shipping\Enums\FulfillmentStatus;
@@ -28,11 +30,14 @@ class OrderController extends Controller
 
     public function index(Request $request): View
     {
-        $listDate = $this->listDate($request);
+        [$from, $to] = $this->dateBounds($request);
 
         $orders = Order::query()
             ->with('user')
-            ->when($listDate !== null, fn ($q) => $q->whereDate('created_at', $listDate))
+            ->when($from !== null && $to !== null, function ($query) use ($from, $to) {
+                $query->whereDate('created_at', '>=', $from)
+                    ->whereDate('created_at', '<=', $to);
+            })
             ->when($request->filled('channel'), fn ($q) => $q->where('channel', $request->string('channel')))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
             ->orderByDesc('id')
@@ -44,7 +49,61 @@ class OrderController extends Controller
             ->where('status', OrderStatus::Pending)
             ->count();
 
-        return view('admin.orders.index', compact('orders', 'pendingCount', 'listDate'));
+        return view('admin.orders.index', [
+            'orders' => $orders,
+            'pendingCount' => $pendingCount,
+            'from' => $from,
+            'to' => $to,
+            'orderCount' => $orders->total(),
+        ]);
+    }
+
+    public function lookup(Request $request): View
+    {
+        $code = trim((string) $request->query('code', ''));
+        $order = null;
+        $missing = false;
+
+        if ($code !== '') {
+            $order = ctype_digit($code)
+                ? Order::query()->with('items')->find((int) $code)
+                : null;
+            $missing = $order === null;
+        }
+
+        return view('admin.orders.lookup', [
+            'code' => $code,
+            'order' => $order,
+            'missing' => $missing,
+        ]);
+    }
+
+    public function handOver(Order $order): RedirectResponse
+    {
+        $this->orderWriter->handOver($order);
+
+        $message = $order->fresh()->isSaleOnly()
+            ? 'Đã giao đơn #'.$order->id.'. Đơn chỉ mua đã hoàn tất.'
+            : 'Đã ghi nhận giao đồ cho đơn #'.$order->id.'. Lịch thuê vẫn giao và trả ở Lịch thuê.';
+
+        return redirect()
+            ->route('admin.orders.lookup', ['code' => $order->id])
+            ->with('success', $message);
+    }
+
+    public function bill(Order $order): View
+    {
+        abort_unless($order->channel === OrderChannel::Pos, 404);
+
+        $order->load('items', 'payments');
+        $payment = $order->payments->first(
+            fn ($row) => $row->kind !== PaymentKind::Refund && $row->status === PaymentStatus::Completed
+        );
+
+        return view('admin.orders.bill', [
+            'order' => $order,
+            'payment' => $payment,
+        ]);
     }
 
     public function show(Order $order): View
@@ -116,6 +175,31 @@ class OrderController extends Controller
         return back()->with('success', 'Đã cập nhật trạng thái giao: '.$next->label());
     }
 
+    /** @return array{0: ?string, 1: ?string} */
+    private function dateBounds(Request $request): array
+    {
+        $rawDate = trim((string) $request->input('date', ''));
+        if ($rawDate === 'all' && ! $request->filled('from') && ! $request->filled('to')) {
+            return [null, null];
+        }
+
+        $from = $this->validDay($request->input('from'));
+        $to = $this->validDay($request->input('to'));
+        if ($from === null && $to === null) {
+            $single = $this->listDate($request);
+
+            return [$single, $single];
+        }
+
+        $from ??= $to;
+        $to ??= $from;
+        if ($from > $to) {
+            [$from, $to] = [$to, $from];
+        }
+
+        return [$from, $to];
+    }
+
     private function listDate(Request $request): ?string
     {
         $raw = trim((string) $request->input('date', ''));
@@ -123,13 +207,21 @@ class OrderController extends Controller
             return null;
         }
 
-        if ($raw !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw) === 1) {
-            $parsed = Carbon::createFromFormat('Y-m-d', $raw);
-            if ($parsed !== false && $parsed->format('Y-m-d') === $raw && ! $parsed->startOfDay()->isAfter(now()->startOfDay())) {
-                return $raw;
-            }
+        return $this->validDay($raw) ?? now()->toDateString();
+    }
+
+    private function validDay(mixed $raw): ?string
+    {
+        $raw = trim((string) $raw);
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw) !== 1) {
+            return null;
         }
 
-        return now()->toDateString();
+        $parsed = Carbon::createFromFormat('Y-m-d', $raw);
+        if ($parsed === false || $parsed->format('Y-m-d') !== $raw || $parsed->startOfDay()->isAfter(now()->startOfDay())) {
+            return null;
+        }
+
+        return $raw;
     }
 }

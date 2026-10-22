@@ -16,6 +16,7 @@
             ])->values()->all()
             : [['sku' => '', 'size' => '', 'color' => '', 'sale_price' => '', 'rental_price_per_day' => '', 'deposit_amount' => '', 'quantity' => 0, 'rental_quantity' => 0]];
     }
+    $colorImages = $editing ? $product->colorImages->keyBy('color_key') : collect();
 @endphp
 
 @if ($errors->any())
@@ -51,6 +52,28 @@
                     @endforeach
                 </select>
             </div>
+            <div class="col-md-3">
+                <label class="form-label" for="gender">Giới tính</label>
+                <select class="form-select" id="gender" name="gender">
+                    <option value="">Chưa phân loại</option>
+                    @foreach (['nam' => 'Nam', 'nu' => 'Nữ', 'unisex' => 'Unisex'] as $value => $label)
+                        <option value="{{ $value }}" @selected(old('gender', $editing ? $product->gender : '') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="brand">Thương hiệu</label>
+                <input class="form-control" id="brand" name="brand" value="{{ old('brand', $editing ? $product->brand : '') }}" maxlength="100" placeholder="Ví dụ: Nike">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="size_guide_id">Bảng size</label>
+                <select class="form-select" id="size_guide_id" name="size_guide_id">
+                    <option value="">Không dùng</option>
+                    @foreach ($sizeGuides as $guide)
+                        <option value="{{ $guide->id }}" @selected((string) old('size_guide_id', $editing ? $product->size_guide_id : '') === (string) $guide->id)>{{ $guide->name }}{{ $guide->brand ? ' · '.$guide->brand : '' }}</option>
+                    @endforeach
+                </select>
+            </div>
             <div class="col-md-6">
                 <label class="form-label" for="offer_mode">Chế độ <span class="text-danger">*</span></label>
                 <select class="form-select" id="offer_mode" name="offer_mode" required>
@@ -59,10 +82,16 @@
                     @endforeach
                 </select>
             </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="is_print_blank" name="is_print_blank" value="1" @checked(old('is_print_blank', $editing && $product->is_print_blank))>
+                    <label class="form-check-label" for="is_print_blank">Phôi in — chỉ bán để in, không hiện ở cửa hàng</label>
+                </div>
+            </div>
             <div class="col-md-6">
                 <label class="form-label" for="image">Ảnh đại diện</label>
                 <input type="file" class="form-control" id="image" name="image" accept=".jpg,.jpeg,.png,.webp">
-                <div class="form-text">JPG, PNG hoặc WebP; tối đa 2 MB.</div>
+                <div class="form-text">JPG, PNG hoặc WebP; tối đa 2 MB. Ảnh mới được lưu trên Cloudinary khi đã cấu hình khóa.</div>
                 @if ($editing && $product->imageSrc())
                     <img src="{{ $product->imageSrc() }}" class="img-thumbnail mt-2" style="max-height:120px" alt="">
                 @endif
@@ -80,7 +109,7 @@
         <div class="d-flex justify-content-between mb-4">
             <div>
                 <h5 class="card-title mb-1">2. Phân loại sản phẩm</h5>
-                <small class="text-muted">SKU bán: tồn bán. SKU thuê: số món thuê. SKU bán và thuê: điền <strong>cả hai</strong> (độc lập).</small>
+                <small class="text-muted">Chỉ thêm, sửa, xóa phân loại (SKU, size, màu, giá). Ảnh trên từng dòng không bắt buộc; các size cùng màu dùng chung một ảnh. Số lượng nhập ở <a href="{{ route('admin.inventory.index') }}">Tồn kho</a>.</small>
             </div>
             <button type="button" class="btn btn-outline-primary btn-sm" id="add-variant"><i class="fas fa-plus me-1"></i> Thêm phân loại</button>
         </div>
@@ -97,9 +126,32 @@
                         <div class="col-md-2"><label class="form-label">Giá bán</label><input type="number" min="0" step="1000" class="form-control" name="variants[{{ $index }}][sale_price]" value="{{ $variant['sale_price'] ?? '' }}"></div>
                         <div class="col-md-2"><label class="form-label">Thuê/ngày</label><input type="number" min="0" step="1000" class="form-control" name="variants[{{ $index }}][rental_price_per_day]" value="{{ $variant['rental_price_per_day'] ?? '' }}"></div>
                         <div class="col-md-1"><label class="form-label">Cọc</label><input type="number" min="0" step="1000" class="form-control" name="variants[{{ $index }}][deposit_amount]" value="{{ $variant['deposit_amount'] ?? '' }}"></div>
-                        <div class="col-md-1 js-qty-sale"><label class="form-label js-label-sale-qty">Tồn bán *</label><input type="number" min="0" class="form-control" name="variants[{{ $index }}][quantity]" value="{{ $variant['quantity'] ?? 0 }}" required></div>
-                        <div class="col-md-1 js-qty-rental"><label class="form-label">Món thuê</label><input type="number" min="0" class="form-control" name="variants[{{ $index }}][rental_quantity]" value="{{ $variant['rental_quantity'] ?? 0 }}"></div>
+                        @if (! empty($variant['id']))
+                            <div class="col-md-2">
+                                <label class="form-label">Kho hiện tại</label>
+                                <div class="small pt-2">
+                                    Tồn bán {{ $variant['quantity'] ?? 0 }} · Món thuê {{ $variant['rental_quantity'] ?? 0 }}
+                                    <a href="{{ route('admin.inventory.index') }}">Sửa ở Tồn kho</a>
+                                </div>
+                            </div>
+                        @endif
                         <div class="col-md-1 d-flex align-items-end"><button type="button" class="btn btn-outline-danger w-100 remove-variant"><i class="fas fa-trash"></i></button></div>
+                    </div>
+                    @php
+                        $colorKey = \Illuminate\Support\Str::slug((string) ($variant['color'] ?? ''));
+                        $colorImage = $colorKey !== '' ? $colorImages->get($colorKey) : null;
+                    @endphp
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <label class="form-label">Ảnh phân loại</label>
+                            <input class="form-control" type="file" name="variants[{{ $index }}][image]" accept=".jpg,.jpeg,.png,.webp">
+                        </div>
+                        @if ($colorImage && $colorImage->imageSrc())
+                            <div class="col-md-6 d-flex align-items-end gap-3">
+                                <img src="{{ $colorImage->imageSrc() }}" alt="" style="width:64px;height:64px;object-fit:cover">
+                                <label class="form-check mb-2"><input class="form-check-input" type="checkbox" name="remove_color_image_ids[]" value="{{ $colorImage->id }}"> Xóa ảnh</label>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @endforeach
@@ -119,9 +171,13 @@
             <div class="col-md-2"><label class="form-label">Giá bán</label><input type="number" data-field="sale_price" class="form-control" min="0"></div>
             <div class="col-md-2"><label class="form-label">Thuê/ngày</label><input type="number" data-field="rental_price_per_day" class="form-control" min="0"></div>
             <div class="col-md-1"><label class="form-label">Cọc</label><input type="number" data-field="deposit_amount" class="form-control" min="0"></div>
-            <div class="col-md-1 js-qty-sale"><label class="form-label js-label-sale-qty">Tồn bán *</label><input type="number" data-field="quantity" class="form-control" min="0" value="0" required></div>
-            <div class="col-md-1 js-qty-rental"><label class="form-label">Món thuê</label><input type="number" data-field="rental_quantity" class="form-control" min="0" value="0"></div>
             <div class="col-md-1 d-flex align-items-end"><button type="button" class="btn btn-outline-danger w-100 remove-variant"><i class="fas fa-trash"></i></button></div>
+        </div>
+        <div class="row g-3 mt-1">
+            <div class="col-md-6">
+                <label class="form-label">Ảnh phân loại</label>
+                <input class="form-control" type="file" data-field="image" accept=".jpg,.jpeg,.png,.webp">
+            </div>
         </div>
     </div>
 </template>

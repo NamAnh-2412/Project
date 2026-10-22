@@ -4,11 +4,28 @@
 
 @php
     $saleItems = $order->items->where('line_type', \App\Domain\Order\Enums\LineType::Sale);
+    $printItems = $order->items->where('line_type', \App\Domain\Order\Enums\LineType::Print);
+    $reviewItems = $order->items->reject(fn ($item) => $item->line_type === \App\Domain\Order\Enums\LineType::Print);
+    $printOnly = $order->items->isNotEmpty() && $order->items->every(fn ($item) => $item->line_type === \App\Domain\Order\Enums\LineType::Print);
     $sessions = $rentalSessions ?? collect();
 @endphp
 
 @section('content')
-    <nav class="small mb-3"><a href="{{ route('orders.index') }}">Đơn hàng</a> / #{{ $order->id }}</nav>
+    <nav class="small mb-3"><a href="{{ route('my-orders.index') }}">Đơn của tôi</a> / #{{ $order->id }}</nav>
+    @if ($order->channel === \App\Domain\Order\Enums\OrderChannel::Online)
+        <div class="policy-card mb-3 order-code-card">
+            <p class="small text-muted mb-1">Mã đơn</p>
+            <p class="order-code">#{{ $order->id }}</p>
+            @if ($order->isDelivery())
+                <p class="mb-0">Đơn giao qua GHN.@if ($order->ghn_order_code) Mã GHN: <strong>{{ $order->ghn_order_code }}</strong>@endif</p>
+            @else
+                <p class="mb-0">Đưa mã này khi đến lấy.</p>
+            @endif
+            @if ($order->handed_over_at)
+                <p class="small text-success mt-2 mb-0">Cửa hàng đã giao lúc {{ $order->handed_over_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}.</p>
+            @endif
+        </div>
+    @endif
     <div class="policy-card mb-3">
         <h1 class="h4">Đơn #{{ $order->id }}
             <span class="badge text-bg-light">{{ $order->customerKindLabel() }}</span>
@@ -25,10 +42,24 @@
                 @endif
             </p>
         @endif
-        @if ($order->status === \App\Domain\Order\Enums\OrderStatus::Pending)
+        @if ($order->status === \App\Domain\Order\Enums\OrderStatus::Pending && $printOnly)
+            <p class="small text-warning mb-2">Đơn in theo yêu cầu đang chờ thanh toán. Cửa hàng đối soát trong hội thoại.</p>
+        @elseif ($order->status === \App\Domain\Order\Enums\OrderStatus::Pending)
             <p class="small text-warning mb-2">Cửa hàng chưa chốt đơn. Bạn có thể thanh toán trước; kho đã khóa.</p>
         @endif
         <p class="small">{{ $order->shipping_name }} · {{ $order->shipping_phone }}<br>{{ $order->shipping_address }}</p>
+
+        @if ($printItems->isNotEmpty())
+            <h2 class="h6 mt-3">In theo yêu cầu</h2>
+            <ul class="list-unstyled mb-0">
+                @foreach ($printItems as $item)
+                    <li class="mb-2">
+                        {{ $item->product_name }} ({{ $item->sku }}) × {{ $item->quantity }}
+                        — {{ number_format($item->line_total, 0, ',', '.') }}đ
+                    </li>
+                @endforeach
+            </ul>
+        @endif
 
         @if ($saleItems->isNotEmpty())
             <h2 class="h6 mt-3">Mua</h2>
@@ -58,7 +89,6 @@
             <div>Ship: {{ number_format($order->shipping_fee, 0, ',', '.') }}đ</div>
         @endif
         <div class="fw-bold">Tổng {{ number_format($order->grand_total, 0, ',', '.') }}đ</div>
-        <p class="small text-secondary mb-0 mt-2">Đơn lưu snapshot tên/giá/SKU/ảnh tại lúc đặt.</p>
     </div>
 
     @foreach ($sessions as $session)
@@ -98,25 +128,21 @@
                 @endforeach
             </ul>
             @if ($extendable->isNotEmpty())
-                <form class="border rounded p-3 mt-3" method="post" action="{{ route('orders.extensions.store', $order->id) }}">
-                    @csrf
-                    <input type="hidden" name="booking_id" value="{{ $lead->id }}">
-                    <p class="small mb-2">Gia hạn cả buổi — cửa hàng sẽ thu thêm rồi duyệt.</p>
-                    <label class="form-label" for="new_end_date_{{ $lead->id }}">Ngày trả mới</label>
-                    <input class="form-control mb-2" style="max-width:12rem" id="new_end_date_{{ $lead->id }}" name="new_end_date" type="date" required min="{{ $lead->end_date->copy()->addDay()->toDateString() }}">
-                    <button class="btn btn-sm btn-outline-primary" type="submit">Gửi yêu cầu gia hạn</button>
-                </form>
+                @include('storefront.partials.rental-extension-form', [
+                    'orderId' => $order->id,
+                    'lead' => $lead,
+                ])
             @endif
         </div>
     @endforeach
 
-    @if (in_array($order->status->value, ['paid', 'processing', 'completed'], true))
+    @if ($reviewItems->isNotEmpty() && in_array($order->status->value, ['paid', 'processing', 'completed'], true))
         <div class="policy-card mb-3">
             <h2 class="h5">Đánh giá sản phẩm</h2>
-            @foreach ($order->items as $item)
+            @foreach ($reviewItems as $item)
                 <div class="border rounded p-3 mb-3">
                     <div class="fw-semibold mb-2">
-                        <span class="badge text-bg-light">{{ $item->line_type->value === 'sale' ? 'Mua' : 'Thuê' }}</span>
+                        <span class="badge text-bg-light">{{ $item->line_type->label() }}</span>
                         {{ $item->product_name }}
                     </div>
                     @if ($item->review)

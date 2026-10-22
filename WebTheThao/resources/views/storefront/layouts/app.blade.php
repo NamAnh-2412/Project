@@ -8,8 +8,9 @@
     @include('partials.vendor-head')
     <link href="{{ asset('css/storefront/base.css') }}" rel="stylesheet">
     @stack('styles')
+    <link href="{{ asset('css/shared/viewport.css') }}?v={{ filemtime(public_path('css/shared/viewport.css')) }}" rel="stylesheet">
 </head>
-<body>
+<body class="storefront-body">
     <nav class="navbar navbar-expand-lg navbar-dark navbar-wt">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{{ route('home') }}">
@@ -29,6 +30,9 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ request()->query('offer_mode') === 'rental' ? 'active' : '' }}" href="{{ route('catalog.index', ['offer_mode' => 'rental']) }}">Thuê</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('models.*') ? 'active' : '' }}" href="{{ route('models.create') }}">In 3D</a>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {{ request()->routeIs('policies.*') ? 'active' : '' }}" href="#" role="button" data-bs-toggle="dropdown">Chính sách</a>
@@ -50,7 +54,11 @@
                                     Giỏ <span class="cart-badge">{{ $cartCount ?? 0 }}</span>
                                 </a>
                             </li>
-                            <li class="nav-item"><a class="nav-link {{ request()->routeIs('orders.*') ? 'active' : '' }}" href="{{ route('orders.index') }}">Đơn hàng</a></li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('my-orders.*') || request()->routeIs('orders.show') || request()->routeIs('orders.index') || request()->routeIs('rentals.schedule') ? 'active' : '' }}" href="{{ route('my-orders.index') }}">
+                                    Đơn của tôi
+                                </a>
+                            </li>
                             <li class="nav-item"><a class="nav-link {{ request()->routeIs('account.*') ? 'active' : '' }}" href="{{ route('account.show') }}">Tài khoản</a></li>
                             <li class="nav-item">
                                 <a class="nav-link nav-cart {{ request()->routeIs('messages.*') ? 'active' : '' }}" href="{{ route('messages.show') }}">
@@ -60,7 +68,14 @@
                                     @endif
                                 </a>
                             </li>
-                            <li class="nav-item"><a class="nav-link {{ request()->routeIs('notifications.*') ? 'active' : '' }}" href="{{ route('notifications.index') }}">Thông báo</a></li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-cart {{ request()->routeIs('notifications.*') ? 'active' : '' }}" href="{{ route('notifications.index') }}">
+                                    Thông báo
+                                    @if (($unreadNotifications ?? 0) > 0)
+                                        <span class="cart-badge has-items">{{ $unreadNotifications }}</span>
+                                    @endif
+                                </a>
+                            </li>
                         @endif
                         <li class="nav-item">
                             <form method="post" action="{{ route('logout') }}" class="d-inline">
@@ -120,6 +135,7 @@
         </div>
     </footer>
     @include('partials.vendor-scripts')
+    <script src="{{ asset('js/shared/viewport.js') }}"></script>
     <script src="{{ asset('js/storefront/chrome.js') }}"></script>
     @stack('scripts')
 </body>

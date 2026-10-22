@@ -16,7 +16,14 @@
         ], true);
     @endphp
     <p class="small mb-3"><a href="{{ route('admin.orders.index') }}">← Đơn hàng</a></p>
-    <h1 class="page-title">Đơn #{{ $order->id }}</h1>
+    @if ($errors->any())
+        <div class="alert alert-warning">{{ $errors->first() }}</div>
+    @endif
+    <h1 class="page-title">Đơn #{{ $order->id }}
+        @if ($order->channel === \App\Domain\Order\Enums\OrderChannel::Pos)
+            <a class="btn btn-sm btn-outline-secondary ms-2" href="{{ route('admin.orders.bill', $order) }}">In lại</a>
+        @endif
+    </h1>
     <p class="page-subtitle mb-4">{{ $order->status->label() }} · {{ $order->channel->label() }}
         @if ($order->shipping_method) · {{ $order->shipping_method->label() }} @endif
     </p>
@@ -29,7 +36,7 @@
     @endif
     <div class="admin-card p-3 mb-3">
         @foreach ($order->items as $item)
-            <div class="mb-2">{{ $item->line_type->value === 'sale' ? 'Mua' : 'Thuê' }} — {{ $item->product_name }} × {{ $item->quantity }} — {{ number_format($item->line_total, 0, ',', '.') }}đ</div>
+            <div class="mb-2">{{ $item->line_type->label() }} — {{ $item->product_name }} × {{ $item->quantity }} — {{ number_format($item->line_total, 0, ',', '.') }}đ</div>
         @endforeach
         <strong>Tổng {{ number_format($order->grand_total, 0, ',', '.') }}đ</strong>
     </div>

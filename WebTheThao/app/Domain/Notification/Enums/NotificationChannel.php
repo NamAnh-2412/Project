@@ -5,4 +5,5 @@ namespace App\Domain\Notification\Enums;
 enum NotificationChannel: string
 {
     case Email = 'email';
+    case InApp = 'in_app';
 }

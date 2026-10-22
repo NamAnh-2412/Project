@@ -4,27 +4,37 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FinanceController;
+use App\Http\Controllers\Admin\HomeBannerController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\JerseyStudioController as AdminJerseyStudioController;
 use App\Http\Controllers\Admin\MessageController as AdminMessageController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\PosController;
+use App\Http\Controllers\Admin\ModelPrintController as AdminModelPrintController;
+use App\Http\Controllers\Admin\PrintRequestController as AdminPrintRequestController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\SizeGuideController;
 use App\Http\Controllers\Admin\RentalController as AdminRentalController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\SportController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Storefront\Http\Controllers\AuthPageController;
+use App\Storefront\Http\Controllers\PasswordResetController;
+use App\Storefront\Http\Controllers\MyOrdersController;
 use App\Storefront\Http\Controllers\AvailabilityPageController;
 use App\Storefront\Http\Controllers\CartPageController;
 use App\Storefront\Http\Controllers\CatalogPageController;
 use App\Storefront\Http\Controllers\CheckoutPageController;
 use App\Storefront\Http\Controllers\EmailVerificationController;
+use App\Storefront\Http\Controllers\JerseyStudioController;
 use App\Storefront\Http\Controllers\MessagePageController;
+use App\Storefront\Http\Controllers\ModelPrintController;
 use App\Storefront\Http\Controllers\MomoCallbackController;
 use App\Storefront\Http\Controllers\NotificationPageController;
 use App\Storefront\Http\Controllers\PolicyPageController;
+use App\Storefront\Http\Controllers\PrintRequestController;
 use App\Storefront\Http\Controllers\ProfilePageController;
 use App\Storefront\Http\Controllers\ShippingLookupController;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +42,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [CatalogPageController::class, 'home'])->name('home');
 Route::get('/san-pham', [CatalogPageController::class, 'index'])->name('catalog.index');
 Route::get('/san-pham/{slug}', [CatalogPageController::class, 'show'])->name('catalog.show');
+Route::get('/san-pham/{slug}/goi-y-size', [CatalogPageController::class, 'sizeHint'])->name('catalog.size');
 
 Route::prefix('chinh-sach')->name('policies.')->group(function () {
     Route::get('/thue', [PolicyPageController::class, 'rental'])->name('rental');
@@ -42,6 +53,8 @@ Route::prefix('chinh-sach')->name('policies.')->group(function () {
 Route::get('/kho/ban', [AvailabilityPageController::class, 'sale'])->name('availability.sale');
 Route::get('/kho/thue', [AvailabilityPageController::class, 'rental'])->name('availability.rental');
 Route::get('/thue/bao-gia', [AvailabilityPageController::class, 'quote'])->name('rental.quote');
+Route::get('/in-3d', [JerseyStudioController::class, 'show'])->name('models.create');
+Route::get('/in-theo-yeu-cau', fn () => redirect()->route('models.create'));
 
 Route::get('/giao-hang/tinh', [ShippingLookupController::class, 'provinces'])->name('shipping.provinces');
 Route::get('/giao-hang/quan', [ShippingLookupController::class, 'districts'])->name('shipping.districts');
@@ -54,6 +67,8 @@ Route::post('/thanh-toan/momo/ipn', [MomoCallbackController::class, 'ipn'])->nam
 Route::middleware('customer')->group(function () {
     Route::get('/gio-hang', [CartPageController::class, 'index'])->name('cart.index');
     Route::post('/gio-hang', [CartPageController::class, 'add'])->name('cart.add');
+    Route::patch('/gio-hang/{lineId}/so-luong', [CartPageController::class, 'updateQuantity'])->name('cart.quantity');
+    Route::patch('/gio-hang/{lineId}/bien-the', [CartPageController::class, 'updateVariant'])->name('cart.variant');
     Route::delete('/gio-hang/{lineId}', [CartPageController::class, 'remove'])->name('cart.remove');
 });
 
@@ -62,6 +77,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/dang-nhap', [AuthPageController::class, 'login'])->name('login.store');
     Route::get('/dang-ky', [AuthPageController::class, 'showRegister'])->name('register');
     Route::post('/dang-ky', [AuthPageController::class, 'register'])->name('register.store');
+    Route::get('/quen-mat-khau', [PasswordResetController::class, 'create'])->name('password.request');
+    Route::post('/quen-mat-khau', [PasswordResetController::class, 'store'])->middleware('throttle:6,1')->name('password.email');
+    Route::get('/dat-lai-mat-khau/{token}', [PasswordResetController::class, 'edit'])->name('password.reset');
+    Route::post('/dat-lai-mat-khau', [PasswordResetController::class, 'update'])->middleware('throttle:6,1')->name('password.update');
 });
 
 Route::post('/dang-xuat', [AuthPageController::class, 'logout'])->middleware('auth')->name('logout');
@@ -74,6 +93,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
         ->middleware('throttle:6,1')
         ->name('verification.send');
+    Route::get('/in-3d/{modelRequest}/tep', [ModelPrintController::class, 'download'])->name('models.download');
 });
 
 Route::middleware(['auth', 'customer'])->group(function () {
@@ -81,7 +101,18 @@ Route::middleware(['auth', 'customer'])->group(function () {
     Route::put('/tai-khoan', [ProfilePageController::class, 'update'])->name('account.update');
     Route::get('/tin-nhan', [MessagePageController::class, 'show'])->name('messages.show');
     Route::post('/tin-nhan', [MessagePageController::class, 'store'])->name('messages.store');
-    Route::get('/don-hang', [CheckoutPageController::class, 'orders'])->name('orders.index');
+    Route::post('/in-theo-yeu-cau', [PrintRequestController::class, 'store'])->name('prints.store');
+    Route::post('/in-theo-yeu-cau/{printRequest}/quyet-dinh', [PrintRequestController::class, 'decide'])->name('prints.decide');
+    Route::post('/in-3d/ban-phoi', [JerseyStudioController::class, 'save'])->name('studio.save');
+    Route::post('/in-3d/ban-phoi/{jerseyDesign}/gui', [JerseyStudioController::class, 'submit'])->name('studio.submit');
+    Route::post('/in-3d/ban-phoi/{jerseyDesign}/quyet-dinh', [JerseyStudioController::class, 'decide'])->name('studio.decide');
+    Route::post('/in-3d/ban-phoi/{jerseyDesign}/thao-luan', [JerseyStudioController::class, 'discuss'])->name('studio.discuss');
+    Route::post('/in-3d/tam-tinh', [ModelPrintController::class, 'preview'])->name('models.preview');
+    Route::post('/in-3d', [ModelPrintController::class, 'store'])->name('models.store');
+    Route::post('/in-3d/{modelRequest}/quyet-dinh', [ModelPrintController::class, 'decide'])->name('models.decide');
+    Route::get('/don-cua-toi', [MyOrdersController::class, 'index'])->name('my-orders.index');
+    Route::redirect('/don-hang', '/don-cua-toi?tab=mua')->name('orders.index');
+    Route::redirect('/lich-thue', '/don-cua-toi?tab=thue')->name('rentals.schedule');
     Route::get('/don-hang/{order}', [CheckoutPageController::class, 'orderShow'])->name('orders.show');
     Route::post('/don-hang/{order}/gia-han', [CheckoutPageController::class, 'requestExtension'])->name('orders.extensions.store');
     Route::get('/thong-bao', [NotificationPageController::class, 'index'])->name('notifications.index');
@@ -96,14 +127,25 @@ Route::middleware(['auth', 'customer', 'verified'])->group(function () {
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
-    Route::resource('categories', CategoryController::class)->except(['show']);
-    Route::resource('sports', SportController::class)->except(['show']);
-    Route::resource('products', AdminProductController::class)->except(['show']);
+    Route::middleware('owner')->group(function () {
+        Route::resource('categories', CategoryController::class)->except(['show']);
+        Route::resource('sports', SportController::class)->except(['show']);
+        Route::resource('products', AdminProductController::class)->except(['show']);
+        Route::resource('size-guides', SizeGuideController::class)->except(['show']);
+        Route::get('/banner-trang-chu', [HomeBannerController::class, 'edit'])->name('home-banner.edit');
+        Route::put('/banner-trang-chu', [HomeBannerController::class, 'update'])->name('home-banner.update');
+        Route::delete('/banner-trang-chu', [HomeBannerController::class, 'destroy'])->name('home-banner.destroy');
+    });
 
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::get('/inventory/stocks', fn () => redirect()->route('admin.inventory.index'));
     Route::post('/inventory/stocks', [InventoryController::class, 'upsertStock'])->name('inventory.stocks');
+    Route::post('/inventory/receipts', [InventoryController::class, 'storeReceipt'])->name('inventory.receipts.store');
+    Route::post('/inventory/receipts/{receipt}/approve', [InventoryController::class, 'approveReceipt'])->name('inventory.receipts.approve');
+    Route::post('/inventory/receipts/{receipt}/reject', [InventoryController::class, 'rejectReceipt'])->name('inventory.receipts.reject');
     Route::post('/inventory/items', [InventoryController::class, 'storeItem'])->name('inventory.items');
     Route::patch('/inventory/items/{item}/status', [InventoryController::class, 'changeItemStatus'])->name('inventory.items.status');
+    Route::post('/inventory/products/{product}/suspension', [InventoryController::class, 'toggleSuspension'])->name('inventory.suspension');
 
     Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
     Route::post('/pos', [PosController::class, 'store'])->name('pos.store');
@@ -111,10 +153,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::post('/pos/tickets/{ticketId}', [PosController::class, 'switchTicket'])->name('pos.tickets.switch');
     Route::delete('/pos/tickets/{ticketId}', [PosController::class, 'removeTicket'])->name('pos.tickets.destroy');
     Route::post('/pos/lines', [PosController::class, 'add'])->name('pos.add');
+    Route::get('/pos/lines/{lineId}/qty', fn () => redirect()->route('admin.pos.index'));
     Route::post('/pos/lines/{lineId}/qty', [PosController::class, 'changeQty'])->name('pos.qty');
+    Route::get('/pos/lines/{lineId}', fn () => redirect()->route('admin.pos.index'));
     Route::delete('/pos/lines/{lineId}', [PosController::class, 'remove'])->name('pos.remove');
 
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/lookup', [AdminOrderController::class, 'lookup'])->name('orders.lookup');
+    Route::get('/orders/{order}/bill', [AdminOrderController::class, 'bill'])->name('orders.bill');
+    Route::post('/orders/{order}/handover', [AdminOrderController::class, 'handOver'])->name('orders.handover');
     Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
     Route::post('/orders/{order}/confirm', [AdminOrderController::class, 'confirm'])->name('orders.confirm');
     Route::post('/orders/{order}/mark-paid', [AdminOrderController::class, 'markPaid'])->name('orders.mark-paid');
@@ -145,11 +192,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 
     Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
     Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
     Route::get('/messages', [AdminMessageController::class, 'index'])->name('messages.index');
     Route::post('/messages/users/{user}', [AdminMessageController::class, 'start'])->name('messages.start');
     Route::get('/messages/{conversation}', [AdminMessageController::class, 'show'])->name('messages.show');
     Route::post('/messages/{conversation}', [AdminMessageController::class, 'store'])->name('messages.store');
+    Route::post('/messages/{conversation}/in/{printRequest}/bao-gia', [AdminPrintRequestController::class, 'quote'])->name('prints.quote');
+    Route::post('/messages/{conversation}/in-3d/{modelRequest}/bao-gia', [AdminModelPrintController::class, 'quote'])->name('models.quote');
+    Route::get('/yeu-cau-thiet-ke', [AdminJerseyStudioController::class, 'index'])->name('studio.index');
+    Route::post('/messages/{conversation}/ao-3d/{jerseyDesign}/bao-gia', [AdminJerseyStudioController::class, 'quote'])->name('studio.quote');
 
     Route::middleware('owner')->group(function () {
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
@@ -158,6 +210,5 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
         Route::post('/users/{user}/toggle', [AdminUserController::class, 'toggle'])->name('users.toggle');
 
         Route::resource('coupons', CouponController::class)->except(['show']);
-        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     });
 });

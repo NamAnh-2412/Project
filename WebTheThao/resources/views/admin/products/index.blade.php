@@ -27,7 +27,7 @@
                     </td>
                     <td class="fw-semibold">{{ $product->name }}</td>
                     <td><span class="badge text-bg-light">{{ $product->category?->name }}</span></td>
-                    <td>{{ $product->offer_mode->label() }}</td>
+                    <td>{{ $product->offer_mode->label() }}{{ $product->is_print_blank ? ' · Phôi in' : '' }}</td>
                     <td>
                         @foreach ($product->variants->take(3) as $variant)
                             <span class="variant-chip">{{ $variant->color }} / {{ $variant->size }} (kho {{ $variant->stock?->quantity_on_hand ?? 0 }})</span>

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Domain\Chat\Models\Message;
 use App\Domain\Inventory\Enums\ItemStatus;
 use App\Domain\Inventory\Enums\ReservationStatus;
 use App\Domain\Inventory\Models\InventoryItem;
@@ -63,15 +64,22 @@ class PosTest extends TestCase
             'quantity' => 1,
         ])->assertRedirect(route('admin.pos.index'));
 
-        $this->actingAs($staff)->post(route('admin.pos.store'), [
+        $paid = $this->actingAs($staff)->post(route('admin.pos.store'), [
             'customer_mode' => 'existing',
             'customer_id' => $customer->id,
             'action' => 'pay',
             'payment_method' => 'cash',
-        ])->assertRedirect(route('admin.pos.index'));
+        ]);
 
         $order = Order::query()->where('user_id', $customer->id)->first();
         $this->assertNotNull($order);
+        $paid->assertRedirect(route('admin.orders.bill', $order));
+        $this->get(route('admin.orders.bill', $order))
+            ->assertOk()
+            ->assertSee('Bill tại quầy')
+            ->assertSee('#'.$order->id)
+            ->assertSee('Đã thu tiền')
+            ->assertSee('Tiền mặt');
         $this->assertSame(OrderChannel::Pos, $order->channel);
         $this->assertSame(OrderStatus::Paid, $order->status);
         $this->assertSame('Nhận tại quầy', $order->shipping_address);
@@ -428,15 +436,16 @@ class PosTest extends TestCase
             ->assertSee('0123456789')
             ->assertSee('WTT');
 
-        $this->actingAs($staff)->post(route('admin.pos.store'), [
+        $paid = $this->actingAs($staff)->post(route('admin.pos.store'), [
             'customer_mode' => 'existing',
             'customer_id' => $customer->id,
             'payment_method' => 'bank_transfer',
             'action' => 'pay',
-        ])->assertRedirect(route('admin.pos.index'));
+        ]);
 
         $order = Order::query()->where('user_id', $customer->id)->first();
         $this->assertNotNull($order);
+        $paid->assertRedirect(route('admin.orders.bill', $order));
         $this->assertSame(OrderStatus::Paid, $order->fresh()->status);
         $payment = Payment::query()->where('order_id', $order->id)->first();
         $this->assertSame('bank_transfer', $payment->method->value);
@@ -447,5 +456,129 @@ class PosTest extends TestCase
             ->assertOk()
             ->assertDontSee('Xác nhận thanh toán')
             ->assertDontSee('Xác nhận nhận tiền');
+    }
+
+    public function test_counter_blank_deducts_sale_stock_and_asks_the_customer_to_send_the_print(): void
+    {
+        $blank = Product::factory()->create([
+            'name' => 'Áo phôi quầy',
+            'slug' => 'ao-phoi-quay',
+            'is_print_blank' => true,
+            'offer_mode' => OfferMode::Sale,
+        ]);
+        $variant = ProductVariant::factory()->create([
+            'product_id' => $blank->id,
+            'sku' => 'PHOI-QUAY-L',
+            'color' => 'Vàng',
+            'size' => 'L',
+            'sale_price' => 150000,
+            'rental_price_per_day' => null,
+        ]);
+        InventoryStock::factory()->create([
+            'product_variant_id' => $variant->id,
+            'quantity_on_hand' => 6,
+        ]);
+        $staff = User::factory()->staff()->create();
+        $customer = User::factory()->create();
+
+        $this->actingAs($staff)->get(route('admin.pos.index'))
+            ->assertOk()
+            ->assertDontSee('Áo phôi quầy');
+        $this->actingAs($staff)->get(route('admin.pos.index', ['phoi' => 1]))
+            ->assertOk()
+            ->assertSee('Áo phôi quầy')
+            ->assertSee('Thêm phôi');
+
+        $this->actingAs($staff)->post(route('admin.pos.add'), [
+            'line_type' => 'sale',
+            'await_print' => 1,
+            'product_variant_id' => $variant->id,
+            'quantity' => 2,
+        ])->assertRedirect();
+
+        $this->actingAs($staff)->post(route('admin.pos.store'), [
+            'customer_mode' => 'walkin',
+            'walkin_name' => 'Khách lẻ',
+            'action' => 'pay',
+            'payment_method' => 'cash',
+        ])->assertSessionHas('error');
+        $this->assertSame(6, InventoryStock::query()->where('product_variant_id', $variant->id)->value('quantity_on_hand'));
+
+        $this->actingAs($staff)->post(route('admin.pos.store'), [
+            'customer_mode' => 'existing',
+            'customer_id' => $customer->id,
+            'action' => 'pay',
+            'payment_method' => 'cash',
+        ])->assertRedirect();
+
+        $this->assertSame(4, InventoryStock::query()->where('product_variant_id', $variant->id)->value('quantity_on_hand'));
+        $this->assertTrue(Message::query()->where('body', 'like', '%Nhắn tên, số hoặc logo%')->exists());
+    }
+
+    public function test_counter_blank_shows_on_hand_quantity_and_image_without_a_sale_price(): void
+    {
+        $blank = Product::factory()->create([
+            'name' => 'Phôi chưa giá',
+            'slug' => 'phoi-chua-gia',
+            'is_print_blank' => true,
+            'offer_mode' => OfferMode::Sale,
+            'image_url' => 'products/phoi-chua-gia.jpg',
+        ]);
+        $variant = ProductVariant::factory()->create([
+            'product_id' => $blank->id,
+            'sku' => 'PHOI-CHUA-GIA',
+            'color' => null,
+            'size' => null,
+            'sale_price' => null,
+            'rental_price_per_day' => null,
+        ]);
+        InventoryStock::factory()->create([
+            'product_variant_id' => $variant->id,
+            'quantity_on_hand' => 1000,
+        ]);
+
+        $this->actingAs(User::factory()->staff()->create())
+            ->get(route('admin.pos.index', ['phoi' => 1]))
+            ->assertOk()
+            ->assertSee('Phôi chưa giá')
+            ->assertSee('còn 1000')
+            ->assertSee('Chưa có giá bán')
+            ->assertSee('products/phoi-chua-gia.jpg')
+            ->assertDontSee('Hết tồn bán');
+    }
+
+    public function test_quantity_button_posts_and_a_get_to_that_url_returns_to_the_desk(): void
+    {
+        $product = Product::factory()->create([
+            'offer_mode' => OfferMode::Sale,
+            'name' => 'Áo nút số lượng',
+            'slug' => 'ao-nut-so-luong',
+        ]);
+        $variant = ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'sku' => 'POS-QTY-BTN',
+            'sale_price' => 100000,
+            'rental_price_per_day' => null,
+        ]);
+        InventoryStock::factory()->create([
+            'product_variant_id' => $variant->id,
+            'quantity_on_hand' => 5,
+        ]);
+        $staff = User::factory()->staff()->create();
+
+        $this->actingAs($staff)->post(route('admin.pos.add'), [
+            'line_type' => 'sale',
+            'product_variant_id' => $variant->id,
+            'quantity' => 1,
+        ]);
+
+        $this->actingAs($staff)->get(route('admin.pos.index'))
+            ->assertOk()
+            ->assertSee('formmethod="post"', false)
+            ->assertSee('Áo nút số lượng');
+
+        $this->actingAs($staff)
+            ->get('/admin/pos/lines/khong-co-dong/qty')
+            ->assertRedirect(route('admin.pos.index'));
     }
 }

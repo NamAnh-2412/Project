@@ -2,9 +2,11 @@
 
 namespace App\Gateway\Services;
 
+use App\Domain\Order\Enums\LineType;
 use App\Domain\Order\Enums\OrderChannel;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Models\Order;
+use App\Domain\Shipping\Enums\ShippingMethod;
 use App\Domain\Payment\Enums\PaymentKind;
 use App\Domain\Payment\Enums\PaymentMethod;
 use App\Domain\Payment\Enums\PaymentStatus;
@@ -107,17 +109,50 @@ class PaymentOrchestrator
                     $this->payments->complete($row, null, $note);
                 }
             }
-        } elseif (! $this->payments->isCollectibleSettled($order->id)) {
+        } else {
+            $this->collectPrintPickup($order);
+        }
+
+        if ($order->channel !== OrderChannel::Pos && ! $this->payments->isCollectibleSettled($order->id)) {
             throw ValidationException::withMessages([
                 'status' => ['Chưa thu đủ. Xác nhận từng khoản (tiền hàng / cọc) trước khi chốt đơn online.'],
             ]);
-        } elseif ($order->status === OrderStatus::Pending) {
+        } elseif ($order->channel !== OrderChannel::Pos && $order->status === OrderStatus::Pending) {
             $order = $this->checkout->confirmByShop($order);
         }
 
         $this->settleOrderIfReady($order->id);
 
         return $this->payments->listByOrder($order->id);
+    }
+
+    /** Đơn in nhận tại quầy không có khoản thu sẵn. Bấm xác nhận thanh toán là đã thu đủ số báo giá. */
+    private function collectPrintPickup(Order $order): void
+    {
+        $order->loadMissing('items');
+        $printOnly = $order->items->isNotEmpty()
+            && $order->items->every(fn ($item) => $item->line_type === LineType::Print);
+        if (! $printOnly || $order->shipping_method !== ShippingMethod::Pickup) {
+            return;
+        }
+
+        $goods = max(0, round(
+            (float) $order->merchandise_total
+            + (float) $order->rental_total
+            - (float) $order->discount_total
+            + (float) $order->shipping_fee,
+            2,
+        ));
+        if ($goods <= 0 || $this->payments->isCollectibleSettled($order->id)) {
+            return;
+        }
+
+        $this->payments->createIntents($order->id, (int) $order->user_id, $goods, (float) $order->deposit_total, PaymentMethod::Cash);
+        foreach ($this->payments->listByOrder($order->id) as $row) {
+            if ($row->status === PaymentStatus::Pending && $row->kind !== PaymentKind::Refund) {
+                $this->payments->complete($row, null, 'Đã thu tại quầy cho đơn in theo yêu cầu.');
+            }
+        }
     }
 
     public function confirmByShop(Order $order): Order

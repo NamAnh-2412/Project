@@ -56,7 +56,8 @@
         <aside class="pos-col">
             <div class="pos-col-head"><span><i class="fas fa-list"></i>Nhóm sản phẩm</span></div>
             <div class="pos-cat-list">
-                <a class="pos-cat {{ $categoryId === null ? 'active' : '' }}" href="{{ route('admin.pos.index', array_filter(['q' => $q !== '' ? $q : null])) }}">Tất cả</a>
+                <a class="pos-cat {{ $categoryId === null && empty($phoi) ? 'active' : '' }}" href="{{ route('admin.pos.index', array_filter(['q' => $q !== '' ? $q : null])) }}">Tất cả</a>
+                <a class="pos-cat {{ ! empty($phoi) ? 'active' : '' }}" href="{{ route('admin.pos.index', ['phoi' => 1]) }}">Phôi in</a>
                 @foreach ($categories as $category)
                     <a class="pos-cat {{ (int) $categoryId === (int) $category->id ? 'active' : '' }}"
                        href="{{ route('admin.pos.index', array_filter(['category_id' => $category->id, 'q' => $q !== '' ? $q : null])) }}">
@@ -70,7 +71,9 @@
             <div class="pos-col-head">
                 <span>Sản phẩm</span>
                 <form method="get" action="{{ route('admin.pos.index') }}">
-                    @if ($categoryId)
+                    @if (! empty($phoi))
+                        <input type="hidden" name="phoi" value="1">
+                    @elseif ($categoryId)
                         <input type="hidden" name="category_id" value="{{ $categoryId }}">
                     @endif
                     <input class="pos-search" type="search" name="q" value="{{ $q }}" placeholder="Tìm sản phẩm...">
@@ -79,12 +82,49 @@
             <div class="pos-products">
                 @forelse ($products as $product)
                     @php
-                        $saleVariants = $product->variants->filter(fn ($variant) => $variant->sale_price !== null);
+                        $saleVariants = ! empty($phoi)
+                            ? $product->variants->filter(fn ($variant) => ($variant->stock?->availableQuantity() ?? 0) > 0)
+                            : $product->variants->filter(fn ($variant) => $variant->sale_price !== null);
                         $rentalVariants = $product->variants->filter(fn ($variant) => $variant->rental_price_per_day !== null);
-                        $price = $saleVariants->first()?->sale_price ?? $rentalVariants->first()?->rental_price_per_day;
+                        $price = $saleVariants->first(fn ($variant) => $variant->sale_price !== null)?->sale_price
+                            ?? $rentalVariants->first()?->rental_price_per_day;
                     @endphp
-                    <article class="pos-product">
-                        @if ($saleVariants->count() === 1)
+                    <article class="pos-product {{ ! empty($phoi) ? 'pos-product--phoi' : '' }}">
+                        @if (! empty($phoi))
+                            <div class="pos-product-thumb">
+                                @if ($product->imageSrc())
+                                    <img src="{{ $product->imageSrc() }}" alt="{{ $product->name }}" onerror="this.remove()">
+                                @else
+                                    <i class="fas fa-box-open"></i>
+                                @endif
+                            </div>
+                            <div class="pos-product-body">
+                                <h3 class="pos-product-name">{{ $product->name }}</h3>
+                                @forelse ($saleVariants as $variant)
+                                    @php
+                                        $available = $variant->stock?->availableQuantity() ?? 0;
+                                        $label = collect([$variant->color, $variant->size])->filter()->implode(' · ') ?: 'Một phân loại';
+                                    @endphp
+                                    <div class="pos-rent-meta">{{ $label }} · còn {{ $available }}</div>
+                                    @if ($variant->sale_price === null)
+                                        <div class="pos-rent-meta">Chưa có giá bán</div>
+                                    @else
+                                        <form class="pos-rent-form" method="post" action="{{ route('admin.pos.add') }}">
+                                            @csrf
+                                            @include('admin.pos._desk_query')
+                                            <input type="hidden" name="line_type" value="sale">
+                                            <input type="hidden" name="await_print" value="1">
+                                            <input type="hidden" name="product_variant_id" value="{{ $variant->id }}">
+                                            <div class="pos-product-price">{{ number_format($variant->sale_price, 0, ',', '.') }}đ</div>
+                                            <label>Số lượng<input type="number" name="quantity" min="1" max="{{ $available }}" value="1" required></label>
+                                            <button class="pos-rent-submit" type="submit">Thêm phôi</button>
+                                        </form>
+                                    @endif
+                                @empty
+                                    <div class="pos-rent-meta">Hết tồn bán</div>
+                                @endforelse
+                            </div>
+                        @elseif ($saleVariants->count() === 1)
                             <form method="post" action="{{ route('admin.pos.add') }}">
                                 @csrf
                                 @include('admin.pos._desk_query')
@@ -140,24 +180,25 @@
                                 @endif
                             </div>
                         @endif
-                        @if ($rentalVariants->isNotEmpty())
-                            <div class="pos-product-body pt-0">
-                                <button class="pos-chip" type="button" data-bs-toggle="collapse" data-bs-target="#rent-{{ $product->id }}">Thuê</button>
-                                <div class="collapse mt-2" id="rent-{{ $product->id }}">
-                                    @foreach ($rentalVariants as $variant)
-                                        <form class="mb-2" method="post" action="{{ route('admin.pos.add') }}">
-                                            @csrf
-                                            @include('admin.pos._desk_query')
-                                            <input type="hidden" name="line_type" value="rental">
-                                            <input type="hidden" name="product_variant_id" value="{{ $variant->id }}">
-                                            <div class="small text-muted mb-1">{{ $variant->size ?: $variant->sku }} · {{ number_format($variant->rental_price_per_day, 0, ',', '.') }}đ/ngày</div>
-                                            <input class="form-control form-control-sm mb-1" type="date" name="rental_start" min="{{ date('Y-m-d') }}" required>
-                                            <input class="form-control form-control-sm mb-1" type="date" name="rental_end" min="{{ date('Y-m-d') }}" required>
-                                            <label class="small text-muted mb-1 d-block">Số lượng</label>
-                                            <input class="form-control form-control-sm mb-1 pos-rent-qty" type="number" name="quantity" min="1" value="1" required>
-                                            <button class="pos-chip" type="submit">Thêm thuê</button>
-                                        </form>
-                                    @endforeach
+                        @if (empty($phoi) && $rentalVariants->isNotEmpty())
+                            <div class="pos-rent-wrap">
+                                <button class="pos-chip" type="button" data-pos-rent-toggle aria-expanded="false">Thuê</button>
+                                <div class="pos-rent" hidden>
+                                    <div class="pos-rent-scroll">
+                                        @foreach ($rentalVariants as $variant)
+                                            <form class="pos-rent-form" method="post" action="{{ route('admin.pos.add') }}">
+                                                @csrf
+                                                @include('admin.pos._desk_query')
+                                                <input type="hidden" name="line_type" value="rental">
+                                                <input type="hidden" name="product_variant_id" value="{{ $variant->id }}">
+                                                <div class="pos-rent-meta">{{ $variant->size ?: $variant->sku }} · {{ number_format($variant->rental_price_per_day, 0, ',', '.') }}đ/ngày</div>
+                                                <label>Từ ngày<input type="date" name="rental_start" min="{{ date('Y-m-d') }}" required></label>
+                                                <label>Đến ngày<input type="date" name="rental_end" min="{{ date('Y-m-d') }}" required></label>
+                                                <label>Số lượng<input type="number" name="quantity" min="1" value="1" required></label>
+                                                <button class="pos-rent-submit" type="submit">Thêm thuê</button>
+                                            </form>
+                                        @endforeach
+                                    </div>
                                 </div>
                             </div>
                         @endif
@@ -194,7 +235,7 @@
                             <div>
                                 <div class="pos-line-name">{{ $line['product_name'] }}</div>
                                 <div class="pos-line-meta">
-                                    {{ $line['line_type'] === 'sale' ? 'Mua' : 'Thuê' }}
+                                    {{ ! empty($line['await_print']) ? 'Phôi in' : ($line['line_type'] === 'sale' ? 'Mua' : 'Thuê') }}
                                     @if ($line['size']) · {{ $line['size'] }} @endif
                                     @if ($line['color']) · {{ $line['color'] }} @endif
                                     @if ($line['line_type'] === 'rental' && $line['rental_start'])
@@ -202,14 +243,14 @@
                                     @endif
                                 </div>
                                 <div class="pos-qty">
-                                    <button type="submit" form="pos-qty-{{ $line['id'] }}-down">−</button>
+                                    <button type="submit" form="pos-qty-{{ $line['id'] }}-down" formmethod="post" formaction="{{ route('admin.pos.qty', $line['id']) }}">−</button>
                                     <span>{{ $line['quantity'] }}</span>
-                                    <button type="submit" form="pos-qty-{{ $line['id'] }}-up">+</button>
+                                    <button type="submit" form="pos-qty-{{ $line['id'] }}-up" formmethod="post" formaction="{{ route('admin.pos.qty', $line['id']) }}">+</button>
                                 </div>
                             </div>
                             <div>
                                 <div class="pos-line-total">{{ number_format($line['line_total'], 0, ',', '.') }}đ</div>
-                                <button class="btn btn-sm btn-link text-danger p-0" type="submit" form="pos-remove-{{ $line['id'] }}">Xóa</button>
+                                <button class="btn btn-sm btn-link text-danger p-0" type="submit" form="pos-remove-{{ $line['id'] }}" formmethod="post" formaction="{{ route('admin.pos.remove', $line['id']) }}">Xóa</button>
                             </div>
                         </div>
                     @empty

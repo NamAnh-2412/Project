@@ -4,20 +4,27 @@ namespace App\Http\Controllers\Admin;
 
 use App\Domain\Product\Models\Category;
 use App\Domain\Product\Models\Product;
+use App\Domain\Product\Models\ProductColorImage;
 use App\Domain\Product\Models\ProductVariant;
+use App\Domain\Product\Models\SizeGuide;
 use App\Domain\Product\Models\Sport;
 use App\Domain\Product\Services\ProductWriter;
+use App\Gateway\Media\CloudinaryImageStore;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Validator as LaravelValidator;
 use Illuminate\View\View;
 
 class ProductController extends Controller
 {
-    public function __construct(private ProductWriter $writer) {}
+    public function __construct(
+        private ProductWriter $writer,
+        private CloudinaryImageStore $images,
+    ) {}
 
     public function index(): View
     {
@@ -38,15 +45,16 @@ class ProductController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
-        $data['image_url'] = $request->file('image')?->store('products', 'public');
+        $data['image_url'] = $this->storeImage($request, 'image');
         $product = $this->writer->saveWithVariants($data);
+        $this->storeColorImages($request, $product);
 
         return redirect()->route('admin.products.edit', $product)->with('success', 'Đã thêm sản phẩm.');
     }
 
     public function edit(Product $product): View
     {
-        $product->load(['variants' => fn ($q) => $q->with('stock')->withCount('items')]);
+        $product->load(['variants' => fn ($q) => $q->with('stock')->withCount('items'), 'colorImages']);
 
         return view('admin.products.edit', $this->formData() + compact('product'));
     }
@@ -54,22 +62,114 @@ class ProductController extends Controller
     public function update(Request $request, Product $product): RedirectResponse
     {
         $data = $this->validated($request, $product);
-        if ($file = $request->file('image')) {
-            $data['image_url'] = $file->store('products', 'public');
-        }
+        $previous = $product->image_url;
+        $data = $this->replaceCover($request, $data);
         $this->writer->saveWithVariants($data, $product);
+        $this->dropReplacedCover($data, $previous);
+        $this->storeColorImages($request, $product);
 
         return redirect()->route('admin.products.edit', $product)->with('success', 'Đã cập nhật sản phẩm.');
     }
 
     public function destroy(Product $product): RedirectResponse
     {
-        if ($product->image_url && ! str_starts_with($product->image_url, 'http') && ! str_starts_with($product->image_url, '/')) {
-            Storage::disk('public')->delete($product->image_url);
-        }
+        $this->deleteImage($product->image_url);
         $this->writer->deleteProduct($product);
 
         return redirect()->route('admin.products.index')->with('success', 'Đã xóa sản phẩm.');
+    }
+
+    private function storeColorImages(Request $request, Product $product): void
+    {
+        $remove = array_map('intval', $request->input('remove_color_image_ids', []));
+        $byColor = [];
+        foreach ($request->input('variants', []) as $index => $row) {
+            $file = $request->file("variants.$index.image");
+            $color = trim((string) ($row['color'] ?? ''));
+            $key = Str::slug($color);
+            if ($file === null || $key === '') {
+                continue;
+            }
+            if (isset($byColor[$key]['path'])) {
+                $this->deleteImage($byColor[$key]['path']);
+            }
+            $path = $this->storeUploaded($file);
+            if ($path !== null) {
+                $byColor[$key] = ['color' => $color, 'path' => $path];
+            }
+        }
+        if ($byColor !== []) {
+            $replaced = ProductColorImage::query()
+                ->where('product_id', $product->id)
+                ->whereIn('color_key', array_keys($byColor))
+                ->pluck('id')
+                ->all();
+            $remove = array_values(array_unique([...$remove, ...$replaced]));
+        }
+        $removed = $remove === []
+            ? collect()
+            : ProductColorImage::query()->where('product_id', $product->id)->whereIn('id', $remove)->get();
+        if ($remove === [] && $byColor === []) {
+            return;
+        }
+        $this->writer->syncColorImages($product, $remove, array_values($byColor));
+        foreach ($removed as $image) {
+            $this->deleteImage($image->image_path);
+        }
+    }
+
+    /** @param  array<string, mixed>  $data */
+    private function replaceCover(Request $request, array $data): array
+    {
+        if ($request->file('image')) {
+            $data['image_url'] = $this->storeImage($request, 'image');
+        }
+
+        return $data;
+    }
+
+    /** @param  array<string, mixed>  $data */
+    private function dropReplacedCover(array $data, ?string $previous): void
+    {
+        if (isset($data['image_url']) && $data['image_url'] !== $previous) {
+            $this->deleteImage($previous);
+        }
+    }
+
+    private function storeImage(Request $request, string $key): ?string
+    {
+        $file = $request->file($key);
+        if ($file === null) {
+            return null;
+        }
+
+        return $this->storeUploaded($file);
+    }
+
+    private function storeUploaded(\Illuminate\Http\UploadedFile $file): ?string
+    {
+        if ($this->images->configured()) {
+            return $this->images->upload($file);
+        }
+
+        return $file->store('products', 'public');
+    }
+
+    private function deleteImage(?string $imageUrl): void
+    {
+        if ($imageUrl === null || $imageUrl === '') {
+            return;
+        }
+
+        if (str_contains($imageUrl, 'res.cloudinary.com')) {
+            $this->images->delete($imageUrl);
+
+            return;
+        }
+
+        if (! str_starts_with($imageUrl, 'http') && ! str_starts_with($imageUrl, '/')) {
+            Storage::disk('public')->delete($imageUrl);
+        }
     }
 
     /** @return array{categories: Collection, sports: Collection} */
@@ -78,6 +178,7 @@ class ProductController extends Controller
         return [
             'categories' => Category::query()->orderBy('name')->get(),
             'sports' => Sport::query()->orderBy('name')->get(),
+            'sizeGuides' => SizeGuide::query()->orderBy('name')->get(),
         ];
     }
 
@@ -87,7 +188,14 @@ class ProductController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['required', 'exists:categories,id'],
             'sport_id' => ['nullable', 'exists:sports,id'],
+            'gender' => ['nullable', 'in:nam,nu,unisex'],
+            'brand' => ['nullable', 'string', 'max:100'],
+            'size_guide_id' => ['nullable', 'exists:size_guides,id'],
+            'variants.*.image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_color_image_ids' => ['nullable', 'array'],
+            'remove_color_image_ids.*' => ['integer'],
             'offer_mode' => ['required', 'in:sale,rental,both'],
+            'is_print_blank' => ['nullable', 'boolean'],
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'variants' => ['required', 'array', 'min:1'],
@@ -98,7 +206,7 @@ class ProductController extends Controller
             'variants.*.sale_price' => ['nullable', 'numeric', 'min:0'],
             'variants.*.rental_price_per_day' => ['nullable', 'numeric', 'min:0'],
             'variants.*.deposit_amount' => ['nullable', 'numeric', 'min:0'],
-            'variants.*.quantity' => ['required', 'integer', 'min:0'],
+            'variants.*.quantity' => ['nullable', 'integer', 'min:0'],
             'variants.*.rental_quantity' => ['nullable', 'integer', 'min:0'],
         ], [
             'name.required' => 'Vui lòng nhập tên sản phẩm.',
@@ -106,10 +214,17 @@ class ProductController extends Controller
             'variants.required' => 'Sản phẩm phải có ít nhất một phân loại.',
             'variants.*.sku.required' => 'Vui lòng nhập mã SKU.',
             'variants.*.sku.distinct' => 'Mã SKU không được trùng nhau.',
-            'variants.*.quantity.required' => 'Vui lòng nhập tồn kho.',
+            'variants.*.quantity.required' => 'Vui lòng nhập số lượng cho phân loại mới.',
         ]);
 
         $validator->after(function (LaravelValidator $validator) use ($request) {
+            foreach ($request->file('variants', []) ?? [] as $index => $row) {
+                $file = is_array($row) ? ($row['image'] ?? null) : null;
+                $color = trim((string) $request->input("variants.$index.color"));
+                if ($file && $color === '') {
+                    $validator->errors()->add("variants.$index.color", 'Nhập màu cho ảnh của phân loại này.');
+                }
+            }
             foreach ($request->input('variants', []) as $index => $variant) {
                 $sku = trim((string) ($variant['sku'] ?? ''));
                 if ($sku === '') {

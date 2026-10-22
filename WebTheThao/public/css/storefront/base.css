@@ -200,6 +200,15 @@ a.card-product:hover { color: inherit; }
 }
 .price { color: var(--wt-blue); font-weight: 700; }
 
+.order-code-card { text-align: center; }
+.order-code {
+    margin: 0 0 .35rem;
+    font-size: 2.6rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    line-height: 1;
+}
+
 .policy-card {
     background: var(--wt-card);
     border-radius: var(--wt-radius);

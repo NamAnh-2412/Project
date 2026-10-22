@@ -7,36 +7,58 @@
     @include('partials.vendor-head', ['icons' => true])
     <link rel="stylesheet" href="{{ asset('css/admin/base.css') }}">
     @stack('styles')
+    <link rel="stylesheet" href="{{ asset('css/shared/viewport.css') }}">
 </head>
 <body class="admin-body">
-    <aside class="admin-sidebar">
+    <aside class="admin-sidebar" id="admin-sidebar">
         <a class="admin-brand" href="{{ route('admin.dashboard') }}">
             <i class="fas fa-cube"></i>
             <span>WebTheThao</span>
         </a>
         <nav class="admin-nav">
+            @php $ownerMenu = auth()->user()->isOwnerAdmin(); @endphp
             <div class="admin-nav-label">Quản lý chung</div>
             <a class="admin-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
                 <i class="fas fa-chart-pie"></i><span>Tổng quan</span>
             </a>
-            <a class="admin-nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}">
-                <i class="fas fa-layer-group"></i><span>Danh mục</span>
-            </a>
-            <a class="admin-nav-link {{ request()->routeIs('admin.sports.*') ? 'active' : '' }}" href="{{ route('admin.sports.index') }}">
-                <i class="fas fa-futbol"></i><span>Môn thể thao</span>
-            </a>
-            <a class="admin-nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">
-                <i class="fas fa-box-open"></i><span>Sản phẩm</span>
-            </a>
+            @if ($ownerMenu)
+                <a class="admin-nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}">
+                    <i class="fas fa-layer-group"></i><span>Danh mục</span>
+                </a>
+                <a class="admin-nav-link {{ request()->routeIs('admin.sports.*') ? 'active' : '' }}" href="{{ route('admin.sports.index') }}">
+                    <i class="fas fa-futbol"></i><span>Môn thể thao</span>
+                </a>
+                <a class="admin-nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">
+                    <i class="fas fa-box-open"></i><span>Sản phẩm</span>
+                </a>
+                <a class="admin-nav-link {{ request()->routeIs('admin.size-guides.*') ? 'active' : '' }}" href="{{ route('admin.size-guides.index') }}">
+                    <i class="fas fa-list"></i><span>Bảng size</span>
+                </a>
+                <a class="admin-nav-link {{ request()->routeIs('admin.home-banner.*') ? 'active' : '' }}" href="{{ route('admin.home-banner.edit') }}">
+                    <i class="fas fa-image"></i><span>Banner trang chủ</span>
+                </a>
+            @endif
             <a class="admin-nav-link {{ request()->routeIs('admin.inventory.*') ? 'active' : '' }}" href="{{ route('admin.inventory.index') }}">
                 <i class="fas fa-warehouse"></i><span>Tồn kho / món thuê</span>
+                @if ($ownerMenu && ($pendingStockReceipts ?? 0) > 0)
+                    <span class="admin-nav-badge">{{ $pendingStockReceipts }}</span>
+                @endif
             </a>
             <div class="admin-nav-label mt-3">Bán hàng</div>
             <a class="admin-nav-link {{ request()->routeIs('admin.pos.*') ? 'active' : '' }}" href="{{ route('admin.pos.index') }}">
                 <i class="fas fa-cash-register"></i><span>Bán tại quầy</span>
             </a>
-            <a class="admin-nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">
+            <a class="admin-nav-link {{ request()->routeIs('admin.orders.index') || request()->routeIs('admin.orders.show') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">
                 <i class="fas fa-receipt"></i><span>Đơn hàng</span>
+            </a>
+            <a class="admin-nav-link {{ request()->routeIs('admin.orders.lookup') ? 'active' : '' }}" href="{{ route('admin.orders.lookup') }}">
+                <i class="fas fa-barcode"></i><span>Soát mã</span>
+            </a>
+            <a class="admin-nav-link {{ request()->routeIs('admin.studio.*') ? 'active' : '' }}" href="{{ route('admin.studio.index') }}">
+                <i class="fas fa-tshirt"></i><span>Yêu cầu thiết kế</span>
+                @if (($pendingDesigns ?? 0) > 0)
+                    <span class="admin-nav-badge">{{ $pendingDesigns }}</span>
+                @endif
             </a>
             <a class="admin-nav-link {{ request()->routeIs('admin.messages.*') ? 'active' : '' }}" href="{{ route('admin.messages.index') }}">
                 <i class="fas fa-comments"></i><span>Tin nhắn</span>
@@ -58,8 +80,8 @@
                     <i class="fas fa-users"></i><span>Người dùng</span>
                 </a>
             @endif
-            <div class="admin-nav-label mt-3">Khuyến mãi &amp; báo cáo</div>
-            @if (auth()->user()->isOwnerAdmin())
+            <div class="admin-nav-label mt-3">{{ $ownerMenu ? 'Khuyến mãi & báo cáo' : 'Theo dõi' }}</div>
+            @if ($ownerMenu)
                 <a class="admin-nav-link {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}">
                     <i class="fas fa-ticket"></i><span>Mã giảm giá</span>
                 </a>
@@ -67,11 +89,9 @@
             <a class="admin-nav-link {{ request()->routeIs('admin.reviews.*') ? 'active' : '' }}" href="{{ route('admin.reviews.index') }}">
                 <i class="fas fa-star"></i><span>Đánh giá</span>
             </a>
-            @if (auth()->user()->isOwnerAdmin())
-                <a class="admin-nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" href="{{ route('admin.reports.index') }}">
-                    <i class="fas fa-chart-line"></i><span>Báo cáo</span>
-                </a>
-            @endif
+            <a class="admin-nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" href="{{ route('admin.reports.index') }}">
+                <i class="fas fa-chart-line"></i><span>Báo cáo</span>
+            </a>
         </nav>
         <div class="admin-user">
             <div class="small fw-semibold text-truncate">{{ auth()->user()->name }}</div>
@@ -89,7 +109,15 @@
             </div>
         </div>
     </aside>
+    <div class="admin-nav-backdrop" data-admin-nav-backdrop></div>
     <div class="admin-main">
+        <div class="admin-topbar">
+            <button class="btn btn-sm btn-outline-secondary admin-menu-btn" type="button" data-admin-nav-toggle aria-controls="admin-sidebar" aria-expanded="false">
+                <i class="fas fa-bars" aria-hidden="true"></i>
+                <span>Menu</span>
+            </button>
+            <span class="fw-semibold">WebTheThao</span>
+        </div>
         <main class="admin-content">
             @if (session('status') || session('success'))
                 <div class="alert alert-success">{{ session('status') ?: session('success') }}</div>
@@ -101,6 +129,7 @@
         </main>
     </div>
     @include('partials.vendor-scripts')
+    <script src="{{ asset('js/shared/viewport.js') }}"></script>
     @stack('scripts')
 </body>
 </html>

@@ -22,8 +22,10 @@ class Notification extends Model
         'subject',
         'body',
         'payload',
+        'dedupe_key',
         'status',
         'sent_at',
+        'read_at',
         'error_message',
     ];
 
@@ -36,6 +38,7 @@ class Notification extends Model
             'payload' => 'array',
             'status' => NotificationStatus::class,
             'sent_at' => 'datetime',
+            'read_at' => 'datetime',
         ];
     }
 

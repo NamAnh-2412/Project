@@ -42,6 +42,7 @@ class Order extends Model
         'to_ward_code',
         'ghn_order_code',
         'fulfillment_status',
+        'handed_over_at',
         'notes',
     ];
 
@@ -61,6 +62,7 @@ class Order extends Model
             'to_province_id' => 'integer',
             'to_district_id' => 'integer',
             'fulfillment_status' => FulfillmentStatus::class,
+            'handed_over_at' => 'datetime',
         ];
     }
 
@@ -90,9 +92,15 @@ class Order extends Model
 
         $hasSale = $this->items->contains(fn (OrderItem $item) => $item->line_type === LineType::Sale);
         $hasRent = $this->items->contains(fn (OrderItem $item) => $item->line_type === LineType::Rental);
+        $hasPrint = $this->items->contains(fn (OrderItem $item) => $item->line_type === LineType::Print);
+        $kinds = collect([$hasSale, $hasRent, $hasPrint])->filter()->count();
 
-        if ($hasSale && $hasRent) {
+        if ($kinds > 1) {
             return 'Hỗn hợp';
+        }
+
+        if ($hasPrint) {
+            return 'In theo yêu cầu';
         }
 
         return $hasRent ? 'Thuê' : 'Mua';
@@ -106,7 +114,7 @@ class Order extends Model
             return false;
         }
 
-        return $this->items->every(fn (OrderItem $item) => $item->line_type === LineType::Sale);
+        return $this->items->every(fn (OrderItem $item) => $item->line_type !== LineType::Rental);
     }
 
     public function hasBlockingRental(): bool
@@ -129,6 +137,14 @@ class Order extends Model
     public function isDelivery(): bool
     {
         return $this->shipping_method === ShippingMethod::Delivery;
+    }
+
+    public function canHandOver(): bool
+    {
+        return $this->channel === OrderChannel::Online
+            && $this->shipping_method === ShippingMethod::Pickup
+            && $this->handed_over_at === null
+            && in_array($this->status, [OrderStatus::Paid, OrderStatus::Processing], true);
     }
 
     public function payableNow(): int

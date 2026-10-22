@@ -3,9 +3,9 @@
 namespace App\Domain\Product\Services;
 
 use App\Domain\Inventory\Models\InventoryStock;
-use App\Domain\Inventory\Services\InventoryWriter;
 use App\Domain\Product\Models\Category;
 use App\Domain\Product\Models\Product;
+use App\Domain\Product\Models\ProductColorImage;
 use App\Domain\Product\Models\ProductVariant;
 use App\Domain\Product\Models\Sport;
 use App\Domain\Product\Support\CatalogCache;
@@ -15,7 +15,6 @@ use Illuminate\Support\Str;
 
 class ProductWriter
 {
-    public function __construct(private InventoryWriter $inventory) {}
     public function createSport(array $data): Sport
     {
         $sport = Sport::query()->create($this->withSlug($data, Sport::class));
@@ -98,6 +97,30 @@ class ProductWriter
         return $variant->refresh();
     }
 
+    /** @param  list<int>  $removeIds
+     * @param  list<array{color: string, path: string}>  $additions
+     */
+    public function syncColorImages(Product $product, array $removeIds, array $additions): void
+    {
+        if ($removeIds !== []) {
+            $product->colorImages()->whereIn('id', $removeIds)->delete();
+        }
+
+        $sort = (int) $product->colorImages()->max('sort_order');
+        foreach ($additions as $row) {
+            $sort++;
+            ProductColorImage::query()->create([
+                'product_id' => $product->id,
+                'color_name' => $row['color'],
+                'color_key' => Str::slug($row['color']),
+                'image_path' => $row['path'],
+                'sort_order' => $sort,
+            ]);
+        }
+
+        CatalogCache::bump();
+    }
+
     public function deleteVariant(ProductVariant $variant): void
     {
         $variant->delete();
@@ -113,11 +136,18 @@ class ProductWriter
             $attrs = $this->withSlug([
                 'category_id' => $data['category_id'],
                 'sport_id' => $data['sport_id'] ?? null,
+                'gender' => in_array($data['gender'] ?? null, ['nam', 'nu', 'unisex'], true) ? $data['gender'] : null,
+                'brand' => filled($data['brand'] ?? null) ? trim((string) $data['brand']) : null,
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
                 'offer_mode' => $data['offer_mode'],
+                'is_print_blank' => (bool) ($data['is_print_blank'] ?? false),
                 'is_active' => $data['is_active'] ?? true,
             ], Product::class, $product?->id);
+
+            if (array_key_exists('size_guide_id', $data)) {
+                $attrs['size_guide_id'] = filled($data['size_guide_id']) ? (int) $data['size_guide_id'] : null;
+            }
 
             if (! empty($data['image_url'])) {
                 $attrs['image_url'] = $data['image_url'];
@@ -149,20 +179,15 @@ class ProductWriter
                 }
 
                 $kept[] = $variant->id;
-                InventoryStock::query()->updateOrCreate(
-                    ['product_variant_id' => $variant->id],
-                    [
-                        'quantity_on_hand' => (int) ($row['quantity'] ?? 0),
-                        'low_stock_threshold' => 5,
-                    ],
-                );
 
-                $mode = $data['offer_mode'] ?? '';
-                if ($mode === 'rental' && $payload['rental_price_per_day'] !== null) {
-                    $this->inventory->syncRentalPool($variant->id, (int) ($row['quantity'] ?? 0));
-                }
-                if ($mode === 'both' && $payload['rental_price_per_day'] !== null) {
-                    $this->inventory->syncRentalPool($variant->id, (int) ($row['rental_quantity'] ?? $variant->items()->count()));
+                if (empty($row['id'])) {
+                    InventoryStock::query()->firstOrCreate(
+                        ['product_variant_id' => $variant->id],
+                        [
+                            'quantity_on_hand' => 0,
+                            'low_stock_threshold' => 5,
+                        ],
+                    );
                 }
             }
 

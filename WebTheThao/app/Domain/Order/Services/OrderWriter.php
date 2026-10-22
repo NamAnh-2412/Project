@@ -8,11 +8,29 @@ use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Models\Order;
 use App\Domain\Shipping\Enums\FulfillmentStatus;
 use App\Domain\Shipping\Enums\ShippingMethod;
+use App\Domain\User\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class OrderWriter
 {
+    /**
+     * Đơn in nhận tại shop. Dòng và ghi chú đã được luồng gọi chốt sẵn.
+     *
+     * @param  array<string, mixed>  $line
+     */
+    public function createPickupPrint(User $customer, string $notes, array $line): Order
+    {
+        return $this->create($customer->id, [
+            'channel' => OrderChannel::Online,
+            'shipping_method' => ShippingMethod::Pickup,
+            'shipping_name' => $customer->name,
+            'shipping_phone' => $customer->phone,
+            'fulfillment_status' => FulfillmentStatus::Pickup,
+            'notes' => $notes,
+        ], [$line]);
+    }
+
     /**
      * @param  list<array<string, mixed>>  $items
      */
@@ -33,11 +51,11 @@ class OrderWriter
             $lineTotal = round((float) $item['line_total'], 2);
             $depositAmount = round((float) ($item['deposit_amount'] ?? 0), 2);
 
-            if ($type === LineType::Sale) {
-                $merchandise += $lineTotal;
-            } else {
+            if ($type === LineType::Rental) {
                 $rental += $lineTotal;
                 $deposit += $depositAmount;
+            } else {
+                $merchandise += $lineTotal;
             }
         }
 
@@ -139,6 +157,36 @@ class OrderWriter
         }
 
         return $this->changeStatus($order, OrderStatus::Processing);
+    }
+
+    public function handOver(Order $order): Order
+    {
+        if ($order->channel !== OrderChannel::Online || $order->shipping_method !== ShippingMethod::Pickup) {
+            throw ValidationException::withMessages([
+                'code' => ['Chỉ giao tại quầy cho đơn online nhận tại cửa hàng.'],
+            ]);
+        }
+
+        if ($order->handed_over_at !== null) {
+            throw ValidationException::withMessages([
+                'code' => ['Đơn này đã giao lúc '.$order->handed_over_at->timezone(config('app.timezone'))->format('d/m/Y H:i').'.'],
+            ]);
+        }
+
+        if (! in_array($order->status, [OrderStatus::Paid, OrderStatus::Processing], true)) {
+            throw ValidationException::withMessages([
+                'code' => ['Đơn chưa thanh toán hoặc không còn giao được.'],
+            ]);
+        }
+
+        $order->handed_over_at = now();
+        $order->save();
+
+        if ($order->isSaleOnly()) {
+            return $this->complete($order);
+        }
+
+        return $order->refresh()->load('items');
     }
 
     public function complete(Order $order): Order

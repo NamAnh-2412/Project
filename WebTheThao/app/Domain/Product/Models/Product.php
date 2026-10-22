@@ -18,13 +18,18 @@ class Product extends Model
     protected $fillable = [
         'category_id',
         'sport_id',
+        'gender',
+        'brand',
         'name',
         'slug',
         'description',
         'offer_mode',
         'image_url',
+        'size_guide_id',
         'video_url',
         'is_active',
+        'is_suspended',
+        'is_print_blank',
     ];
 
     protected function casts(): array
@@ -32,6 +37,8 @@ class Product extends Model
         return [
             'offer_mode' => OfferMode::class,
             'is_active' => 'boolean',
+            'is_suspended' => 'boolean',
+            'is_print_blank' => 'boolean',
         ];
     }
 
@@ -48,6 +55,16 @@ class Product extends Model
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class);
+    }
+
+    public function colorImages(): HasMany
+    {
+        return $this->hasMany(ProductColorImage::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function sizeGuide(): BelongsTo
+    {
+        return $this->belongsTo(SizeGuide::class);
     }
 
     public function reviews(): HasMany
@@ -82,8 +99,21 @@ class Product extends Model
             return null;
         }
 
-        if (str_starts_with($this->image_url, 'http') || str_starts_with($this->image_url, '/')) {
+        if (str_starts_with($this->image_url, 'http://') || str_starts_with($this->image_url, 'https://')) {
             return $this->image_url;
+        }
+
+        if (str_starts_with($this->image_url, '/media/')) {
+            $relative = ltrim($this->image_url, '/');
+            if (! is_file(public_path($relative))) {
+                return null;
+            }
+
+            return asset($relative);
+        }
+
+        if (str_starts_with($this->image_url, '/')) {
+            return asset(ltrim($this->image_url, '/'));
         }
 
         return asset('storage/'.$this->image_url);
