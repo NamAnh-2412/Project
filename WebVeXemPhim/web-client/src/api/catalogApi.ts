@@ -121,16 +121,30 @@ export async function fetchConcessions() {
   return data;
 }
 
-export async function createConcession(body: { name: string; price: number; type: string; status?: string }) {
+export async function createConcession(body: {
+  name: string;
+  price: number;
+  type: string;
+  status?: string;
+  description?: string;
+  badge?: string;
+}) {
   const { data } = await api.post<ConcessionProduct>("/api/concessions", body);
   return data;
 }
 
 export async function updateConcession(
   id: number,
-  body: { name: string; price: number; type: string; status: string },
+  body: { name: string; price: number; type: string; status: string; description?: string | null; badge?: string | null },
 ) {
   const { data } = await api.put<ConcessionProduct>(`/api/concessions/${id}`, body);
+  return data;
+}
+
+export async function uploadConcessionImage(id: number, file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await api.post<ConcessionProduct>(`/api/concessions/${id}/image`, form);
   return data;
 }
 

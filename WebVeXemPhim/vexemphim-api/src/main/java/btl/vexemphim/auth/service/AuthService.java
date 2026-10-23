@@ -42,8 +42,13 @@ public class AuthService {
         if (userRepository.existsByUsername(req.username())) {
             throw new ApiException(HttpStatus.CONFLICT, "USERNAME_TAKEN", "Username đã tồn tại");
         }
+        String email = req.email().trim().toLowerCase();
+        if (userRepository.existsByEmail(email)) {
+            throw new ApiException(HttpStatus.CONFLICT, "EMAIL_TAKEN", "Email đã được dùng");
+        }
         User user = new User();
         user.setUsername(req.username());
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode(req.password()));
         user.setRole(Role.CUSTOMER);
         userRepository.save(user);

@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useBrand } from "../context/BrandContext";
 import { assetUrl } from "../lib/assetUrl";
@@ -12,6 +13,9 @@ const links = [
   { to: "/admin/showtimes", label: "Suất chiếu" },
   { to: "/admin/concessions", label: "Đồ ăn vặt" },
   { to: "/admin/reports", label: "Báo cáo" },
+  { to: "/admin/vouchers", label: "Mã giảm giá" },
+  { to: "/admin/users", label: "Tài khoản" },
+  { to: "/admin/notices", label: "Thông báo" },
   { to: "/admin/settings", label: "Cài đặt" },
 ];
 
@@ -19,11 +23,15 @@ export default function AdminLayout() {
   const { user, logout } = useAuth();
   const { name, logoUrl } = useBrand();
   const nav = useNavigate();
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="admin-shell">
-      <aside className="admin-aside">
+      <aside className={`admin-aside ${collapsed ? "is-collapsed" : ""}`}>
         <div className="admin-brand">
+          <button type="button" className="admin-collapse" onClick={() => setCollapsed((v) => !v)} aria-label="Thu gọn menu">
+            {collapsed ? "»" : "«"}
+          </button>
           <Link to="/" className="admin-brand-row">
             {logoUrl ? (
               <img className="admin-brand-logo" src={assetUrl(logoUrl)} alt="" />
@@ -42,7 +50,7 @@ export default function AdminLayout() {
               end={l.to === "/"}
               className={({ isActive }) => (isActive ? "admin-nav-on" : "admin-nav-item")}
             >
-              {l.label}
+              <span>{l.label}</span>
             </NavLink>
           ))}
         </nav>

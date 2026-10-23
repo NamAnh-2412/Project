@@ -1,5 +1,6 @@
 package btl.vexemphim.catalog.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record MovieResponse(
@@ -14,6 +15,8 @@ public record MovieResponse(
         String trailerUrl,
         String director,
         String castNames,
-        LocalDate releaseDate
+        LocalDate releaseDate,
+        BigDecimal ratingAverage,
+        int ratingCount
 ) {
 }

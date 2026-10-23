@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 
 import { useBrand } from "../context/BrandContext";
 import { assetUrl } from "../lib/assetUrl";
+import PasswordField from "../components/PasswordField";
+import { notifyError } from "../lib/notify";
 
 export default function LoginPage({ pos = false }: { pos?: boolean }) {
   const { login } = useAuth();
@@ -26,8 +28,10 @@ export default function LoginPage({ pos = false }: { pos?: boolean }) {
       if (u.role === "ADMIN") nav("/admin/movies");
       else if (u.role === "CASHIER") nav("/pos");
       else nav(loc.state?.from || "/");
-    } catch {
-      setErr("Sai tài khoản hoặc mật khẩu");
+    } catch (e) {
+      const text = "Sai tài khoản hoặc mật khẩu";
+      setErr(text);
+      notifyError(e, text);
     }
   };
 
@@ -60,7 +64,7 @@ export default function LoginPage({ pos = false }: { pos?: boolean }) {
           </div>
           <div className="field">
             <label>Mật khẩu</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordField value={password} onChange={setPassword} autoComplete="current-password" />
           </div>
           <button className="btn btn-yellow" type="submit" style={{ width: "100%" }}>Đăng nhập</button>
         </form>

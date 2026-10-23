@@ -13,6 +13,9 @@ export default function Navbar() {
   const loc = useLocation();
   const { name, logoUrl } = useBrand();
   const [q, setQ] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const home = user?.role === "CASHIER" ? "/pos" : user?.role === "ADMIN" ? "/admin/movies" : "/";
 
   const search = (e: FormEvent) => {
@@ -35,7 +38,9 @@ export default function Navbar() {
       </NavLink>
 
       {user?.role !== "CASHIER" && user?.role !== "ADMIN" && (
-        <form className="nav-search" onSubmit={search}>
+        <>
+          <button type="button" className="nav-burger" aria-label="Mở tìm kiếm" onClick={() => setSearchOpen((v) => !v)}>⌕</button>
+          <form className={`nav-search ${searchOpen ? "open" : ""}`} onSubmit={search}>
           <span aria-hidden>⌕</span>
           <input
             value={q}
@@ -43,23 +48,27 @@ export default function Navbar() {
             placeholder="Tìm kiếm phim..."
           />
         </form>
+        </>
       )}
 
-      <nav className="nav-links">
+      <button type="button" className="nav-burger" aria-label="Mở menu" onClick={() => setMenuOpen((v) => !v)}>☰</button>
+      <nav className={`nav-links ${menuOpen ? "open" : ""}`} onClick={() => setMenuOpen(false)}>
         {user?.role !== "CASHIER" && user?.role !== "ADMIN" && (
           <>
-            <NavLink to="/" end>Chủ đề</NavLink>
+            <NavLink to="/#chu-de" end>Chủ đề</NavLink>
             <NavLink to="/?tab=showing" className={() => (loc.search.includes("tab=showing") ? "active" : "")}>Đang chiếu</NavLink>
             <NavLink to="/?tab=coming" className={() => (loc.search.includes("tab=coming") ? "active" : "")}>Sắp chiếu<span className="nav-badge">NEW</span></NavLink>
-            <NavLink to="/" end>Lịch chiếu</NavLink>
+            <NavLink to="/#dang-chieu" end>Lịch chiếu</NavLink>
             {user?.role === "CUSTOMER" && <NavLink to="/tickets">Vé của tôi</NavLink>}
           </>
         )}
         {user?.role === "CASHIER" && (
           <>
             <NavLink to="/pos" end>Bán vé</NavLink>
+            <NavLink to="/pos/shift">Ca quầy</NavLink>
             <NavLink to="/pos/revenue">Doanh thu</NavLink>
             <NavLink to="/pos/tickets">Soát vé</NavLink>
+            <NavLink to="/pos/notices">Thông báo</NavLink>
           </>
         )}
         {user?.role === "ADMIN" && (
@@ -69,6 +78,7 @@ export default function Navbar() {
             <NavLink to="/admin/showtimes">Suất chiếu</NavLink>
             <NavLink to="/admin/concessions">Đồ ăn vặt</NavLink>
             <NavLink to="/admin/reports">Báo cáo</NavLink>
+            <NavLink to="/admin/notices">Thông báo</NavLink>
             <NavLink to="/admin/settings">Cài đặt</NavLink>
           </>
         )}
@@ -83,19 +93,26 @@ export default function Navbar() {
           </>
         )}
         {user && (
-          <>
-            <span className="nav-user">{user.username}</span>
-            <button
-              className="btn-pill"
-              onClick={async () => {
-                await abandon();
-                logout();
-                nav(user.role === "CASHIER" ? "/pos/login" : "/");
-              }}
-            >
-              Thoát
+          <div className="nav-menu">
+            <button type="button" className="avatar-pill" aria-label="Tài khoản" onClick={() => setAccountOpen((v) => !v)}>
+              {user.username.slice(0, 1).toUpperCase()}
             </button>
-          </>
+            {accountOpen && (
+              <div className="nav-drop">
+                <div className="muted" style={{ padding: "6px 10px" }}>{user.username}</div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await abandon();
+                    logout();
+                    nav(user.role === "CASHIER" ? "/pos/login" : "/");
+                  }}
+                >
+                  Thoát
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </header>

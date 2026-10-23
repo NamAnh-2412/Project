@@ -19,9 +19,11 @@ public record ReservationResponse(
         LocalDateTime holdExpiresAt,
         List<TicketDto> tickets,
         List<String> seatLabels,
-        List<ConcessionDto> concessions
+        List<ConcessionDto> concessions,
+        BigDecimal discountAmount,
+        String voucherCode
 ) {
-    public record TicketDto(String ticketCode, String seatLabel, String qrPayload) {
+    public record TicketDto(String ticketCode, String seatLabel, String qrPayload, String status) {
     }
 
     public record ConcessionDto(Long productId, String name, BigDecimal unitPrice, int qty, BigDecimal lineTotal) {

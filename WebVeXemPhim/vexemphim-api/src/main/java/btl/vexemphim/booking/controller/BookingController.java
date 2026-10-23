@@ -2,8 +2,11 @@ package btl.vexemphim.booking.controller;
 
 import btl.vexemphim.booking.dto.*;
 import btl.vexemphim.booking.service.BookingService;
+import btl.vexemphim.booking.service.OnlinePaymentService;
+import btl.vexemphim.common.exception.ApiException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +19,11 @@ import java.util.List;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final OnlinePaymentService onlinePaymentService;
 
-    public BookingController(BookingService bookingService) {
+    public BookingController(BookingService bookingService, OnlinePaymentService onlinePaymentService) {
         this.bookingService = bookingService;
+        this.onlinePaymentService = onlinePaymentService;
     }
 
     @GetMapping("/showtimes/{showtimeId}/seat-map")
@@ -32,16 +37,51 @@ public class BookingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.hold(req));
     }
 
+    @PostMapping("/{id}/apply-voucher")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ReservationResponse applyVoucher(@PathVariable Long id, @Valid @RequestBody ApplyVoucherRequest req) {
+        return bookingService.applyVoucher(id, req.code());
+    }
+
+    @PostMapping("/{id}/create-payment-link")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public PaymentLinkResponse paymentLink(@PathVariable Long id) {
+        return onlinePaymentService.createLink(id);
+    }
+
+    @PostMapping("/{id}/momo")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public PaymentLinkResponse momo(@PathVariable Long id) {
+        return onlinePaymentService.createMomo(id);
+    }
+
+    @GetMapping(value = "/{id}/mock-qr", produces = MediaType.IMAGE_PNG_VALUE)
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public byte[] mockQr(@PathVariable Long id) {
+        return bookingService.mockPaymentQr(id);
+    }
+
     @PostMapping("/{id}/confirm")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ReservationResponse confirm(@PathVariable Long id, @RequestBody(required = false) ConfirmRequest req) {
-        return bookingService.confirmOnline(id, req == null ? new ConfirmRequest("ONLINE_MOCK") : req);
+        ConfirmRequest body = req == null ? new ConfirmRequest("ONLINE_MOCK") : req;
+        String method = body.paymentMethod() == null ? "ONLINE_MOCK" : body.paymentMethod();
+        if (onlinePaymentService.momoConfigured() && "ONLINE_MOCK".equals(method)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "USE_MOMO", "Vé online thanh toán bằng MoMo");
+        }
+        return bookingService.confirmOnline(id, body);
     }
 
     @PutMapping("/{id}/concessions")
     @PreAuthorize("hasAnyRole('CUSTOMER','CASHIER')")
     public ReservationResponse concessions(@PathVariable Long id, @Valid @RequestBody ConcessionCartRequest req) {
         return bookingService.setConcessions(id, req);
+    }
+
+    @PostMapping("/{id}/cancel-tickets")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ReservationResponse cancelTickets(@PathVariable Long id) {
+        return bookingService.cancelOnlineTicket(id);
     }
 
     @DeleteMapping("/{id}")

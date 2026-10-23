@@ -1,12 +1,16 @@
 package btl.vexemphim.booking.entity;
 
 import jakarta.persistence.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "payments")
+@EntityListeners(AuditingEntityListener.class)
 public class Payment {
 
     @Id
@@ -19,7 +23,7 @@ public class Payment {
     @Column(length = 16)
     private String method;
 
-    @Column(length = 16)
+    @Column(length = 32)
     private String status;
 
     @Column(precision = 12, scale = 2)
@@ -27,6 +31,26 @@ public class Payment {
 
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
+
+    @Column(name = "order_code", unique = true)
+    private Long orderCode;
+
+    @Column(name = "gateway_order_id", unique = true, length = 64)
+    private String gatewayOrderId;
+
+    @Column(name = "checkout_url", length = 1024)
+    private String checkoutUrl;
+
+    @Column(name = "qr_code", columnDefinition = "TEXT")
+    private String qrCode;
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -40,4 +64,12 @@ public class Payment {
     public void setAmount(BigDecimal amount) { this.amount = amount; }
     public LocalDateTime getPaidAt() { return paidAt; }
     public void setPaidAt(LocalDateTime paidAt) { this.paidAt = paidAt; }
+    public Long getOrderCode() { return orderCode; }
+    public void setOrderCode(Long orderCode) { this.orderCode = orderCode; }
+    public String getGatewayOrderId() { return gatewayOrderId; }
+    public void setGatewayOrderId(String gatewayOrderId) { this.gatewayOrderId = gatewayOrderId; }
+    public String getCheckoutUrl() { return checkoutUrl; }
+    public void setCheckoutUrl(String checkoutUrl) { this.checkoutUrl = checkoutUrl; }
+    public String getQrCode() { return qrCode; }
+    public void setQrCode(String qrCode) { this.qrCode = qrCode; }
 }

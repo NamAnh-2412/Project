@@ -25,6 +25,10 @@ public class Seat {
     @Column(length = 16)
     private String type = "STANDARD";
 
+    /** Ghế kia trong cặp COUPLE. Giữ một ghế là giữ cả cặp. */
+    @Column(name = "pair_seat_id")
+    private Long pairSeatId;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Room getRoom() { return room; }
@@ -35,6 +39,8 @@ public class Seat {
     public void setNumber(int number) { this.number = number; }
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
+    public Long getPairSeatId() { return pairSeatId; }
+    public void setPairSeatId(Long pairSeatId) { this.pairSeatId = pairSeatId; }
 
     public String label() {
         return rowLabel + number;

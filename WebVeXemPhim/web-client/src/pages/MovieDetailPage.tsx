@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchMovie, fetchShowtimes } from "../api/catalogApi";
-import type { Movie, Showtime } from "../api/types";
+import { fetchReviews, saveReview } from "../api/bookingApi";
+import type { Movie, Review, Showtime } from "../api/types";
 import Poster from "../components/Poster";
 import TrailerModal from "../components/TrailerModal";
+import DateStrip, { isoDate, showBand } from "../components/DateStrip";
 import { useAuth } from "../context/AuthContext";
 import { youtubeEmbedSrc, youtubeId } from "../lib/youtube";
 
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return isoDate();
 }
 
 function formatDate(iso?: string) {
@@ -35,6 +37,10 @@ export default function MovieDetailPage() {
   const [shows, setShows] = useState<Showtime[]>([]);
   const [err, setErr] = useState("");
   const [trailerOpen, setTrailerOpen] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [stars, setStars] = useState(5);
+  const [comment, setComment] = useState("");
+  const [reviewMsg, setReviewMsg] = useState("");
 
   useEffect(() => {
     if (!Number.isFinite(id) || id < 1) {
@@ -49,6 +55,11 @@ export default function MovieDetailPage() {
         setMovie(null);
         setErr("Không tìm thấy phim");
       });
+  }, [id]);
+
+  useEffect(() => {
+    if (!Number.isFinite(id) || id < 1) return;
+    fetchReviews(id).then(setReviews).catch(() => setReviews([]));
   }, [id]);
 
   useEffect(() => {
@@ -97,6 +108,9 @@ export default function MovieDetailPage() {
                 {movie.genreName && <span className="chip">{movie.genreName}</span>}
                 <span className="chip">{movie.durationMinutes} phút</span>
                 {movie.releaseDate && <span className="chip">KC {formatDate(movie.releaseDate)}</span>}
+                {(movie.ratingCount ?? 0) > 0 && (
+                  <span className="chip">{Number(movie.ratingAverage).toFixed(1)} ★ · {movie.ratingCount} đánh giá</span>
+                )}
               </div>
               <div className="hero-actions">
                 {movie.status === "SHOWING" && (
@@ -123,10 +137,7 @@ export default function MovieDetailPage() {
         )}
 
         {movie && (
-          <div className="movie-detail">
-            <div className="movie-detail-poster">
-              <Poster movie={movie} />
-            </div>
+          <div className="movie-detail" style={{ gridTemplateColumns: "minmax(0, 1fr)" }}>
             <div>
               <h2 style={{ marginTop: 0 }}>Thông tin phim</h2>
               <dl className="movie-dl">
@@ -166,27 +177,102 @@ export default function MovieDetailPage() {
             {user?.role === "ADMIN" && (
               <p className="muted">Bạn đang xem với tài khoản admin — không đặt vé tại đây.</p>
             )}
-            <div className="field" style={{ maxWidth: 220 }}>
-              <label>Ngày chiếu</label>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            </div>
-            <div className="chips">
-              {shows.map((s) => (
-                <button
-                  key={s.id}
-                  className="chip"
-                  type="button"
-                  disabled={!canBook}
-                  onClick={() => pick(s.id)}
-                >
-                  {s.startAt.slice(11, 16)} · {s.roomName}
-                  <div className="muted">{Number(s.basePrice).toLocaleString()}đ</div>
-                </button>
-              ))}
-              {shows.length === 0 && <p className="muted">Không có suất ngày này.</p>}
-            </div>
+            <DateStrip value={date} onChange={setDate} />
+            {["Sáng & trưa", "Chiều", "Tối & đêm"].map((band) => {
+              const rows = shows.filter((s) => showBand(s.startAt) === band);
+              if (rows.length === 0) return null;
+              return (
+                <div className="show-band" key={band}>
+                  <h3 style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    <span>{band}</span>
+                    <span className="muted" style={{ fontSize: 12, fontWeight: 500 }}>({rows.length} suất)</span>
+                  </h3>
+                  <div className="chips" style={{ gap: 10 }}>
+                    {rows.map((s) => {
+                      const left = s.capacity != null ? Number(s.capacity) - Number(s.booked ?? 0) - Number(s.hold ?? 0) : null;
+                      const roomLower = s.roomName?.toLowerCase() || "";
+                      const isVip = roomLower.includes("vip");
+                      const is3d = roomLower.includes("3d") || roomLower.includes("imax");
+                      const formatLabel = isVip ? "VIP Lounge" : is3d ? "3D Phụ đề" : "2D Phụ đề";
+                      const formatClass = isVip ? "badge-vip" : is3d ? "badge-3d" : "badge-2d";
+                      const isSoldOut = left != null && left <= 0;
+
+                      return (
+                        <button
+                          key={s.id}
+                          className="showtime-card-chip"
+                          type="button"
+                          disabled={!canBook || isSoldOut}
+                          onClick={() => pick(s.id)}
+                          title={`${s.startAt.slice(11, 16)} · ${s.roomName} (${formatLabel})`}
+                        >
+                          <div className="showtime-time-row">
+                            <span className="showtime-time">{s.startAt.slice(11, 16)}</span>
+                            <span className={`format-badge ${formatClass}`}>{formatLabel}</span>
+                          </div>
+                          <div className="showtime-meta-row">
+                            <span>{s.roomName}</span>
+                            <span>·</span>
+                            <span style={{ fontWeight: 700 }}>{Number(s.basePrice).toLocaleString()}đ</span>
+                            {left != null && (
+                              <>
+                                <span>·</span>
+                                <span className={`seat-badge ${isSoldOut ? "full" : left <= 10 ? "warn" : "ok"}`}>
+                                  {isSoldOut ? "Hết ghế" : `Còn ${left} ghế`}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+            {shows.length === 0 && <p className="muted">Không có suất ngày này.</p>}
           </div>
         )}
+
+        <section style={{ marginTop: 28 }}>
+          <h2>Đánh giá</h2>
+          <p className="muted">Chỉ gửi được sau khi vé của bạn đã được soát tại cửa.</p>
+          {user?.role === "CUSTOMER" && (
+            <form
+              className="panel"
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveReview(id, stars, comment)
+                  .then((saved) => {
+                    setReviews((list) => [saved, ...list.filter((r) => r.id !== saved.id)]);
+                    setReviewMsg("Đã lưu đánh giá");
+                    fetchMovie(id).then(setMovie).catch(() => undefined);
+                  })
+                  .catch(() => setReviewMsg("Chỉ đánh giá khi bạn đã xem phim và vé đã soát"));
+              }}
+            >
+              <label>
+                Số sao
+                <select value={stars} onChange={(e) => setStars(Number(e.target.value))}>
+                  {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </label>
+              <label>
+                Nhận xét
+                <textarea maxLength={500} value={comment} onChange={(e) => setComment(e.target.value)} rows={3} />
+              </label>
+              <button className="btn btn-yellow" type="submit">Gửi đánh giá</button>
+              {reviewMsg && <p className="muted">{reviewMsg}</p>}
+            </form>
+          )}
+          {reviews.length === 0 && <p className="muted">Chưa có đánh giá.</p>}
+          {reviews.map((r) => (
+            <article key={r.id} className="panel">
+              <strong>{r.username}</strong> · {"★".repeat(r.rating)}
+              {r.comment && <p>{r.comment}</p>}
+            </article>
+          ))}
+        </section>
 
         <p style={{ marginTop: 24 }}>
           <Link to="/">← Về trang phim</Link>

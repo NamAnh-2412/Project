@@ -5,7 +5,21 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CineVe — Đặt vé xem phim</title>
-    <meta name="theme-color" content="#050208" />
+    <meta name="theme-color" content="#07040a" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("vx_theme") || "dark";
+          var root = document.documentElement;
+          root.setAttribute("data-theme", t);
+          root.classList.remove("light", "dark");
+          root.classList.add(t);
+          root.style.colorScheme = t;
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", t === "light" ? "#f6f8fc" : "#07040a");
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

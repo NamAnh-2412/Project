@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { cancelHold, fetchSeatMap, holdSeats } from "../api/bookingApi";
+import { cancelHold, fetchSeatMap, getBooking, holdSeats } from "../api/bookingApi";
 import type { SeatCell, SeatMap } from "../api/types";
 import SeatGrid from "../components/SeatGrid";
 import BookingStepper from "../components/BookingStepper";
 import HoldClock from "../components/HoldClock";
 import { useAuth } from "../context/AuthContext";
 import { useAbandonSale, useHoldSession } from "../context/HoldSessionContext";
+import { singleGapFromPaid } from "../lib/seatGap";
+import { errorText, notifyError, notifyOk } from "../lib/notify";
+import { Client } from "@stomp/stompjs";
 
 const MAX_SEATS = 8;
 
@@ -31,12 +34,13 @@ export default function SeatMapPage({ channel }: { channel: "ONLINE" | "POS" }) 
   const id = Number(showtimeId);
   const { user } = useAuth();
   const nav = useNavigate();
-  const { track, release } = useHoldSession();
+  const { track, release, session } = useHoldSession();
   const abortSale = useAbandonSale(channel);
   const [map, setMap] = useState<SeatMap | null>(null);
   const [selected, setSelected] = useState<number[]>([]);
   const [guest, setGuest] = useState("");
   const [err, setErr] = useState("");
+  const [zoom, setZoom] = useState(1);
   const [holdId, setHoldId] = useState<number | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -70,12 +74,58 @@ export default function SeatMapPage({ channel }: { channel: "ONLINE" | "POS" }) 
       .catch(() => setErr("Không tải sơ đồ ghế"));
 
   useEffect(() => {
+    if (!session || session.showtimeId !== id || session.channel !== channel) return;
+    holdIdRef.current = session.reservationId;
+    setHoldId(session.reservationId);
+    setExpiresAt(session.expiresAt);
+    getBooking(session.reservationId)
+      .then((booking) => {
+        if (booking.guestName) setGuest(booking.guestName);
+        if (booking.holdExpiresAt) setExpiresAt(booking.holdExpiresAt);
+      })
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, channel]);
+
+  useEffect(() => {
     firstLoad.current = true;
     load(true).finally(() => {
       firstLoad.current = false;
     });
     const t = setInterval(() => load(false), 5000);
-    return () => clearInterval(t);
+    const wsBase = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8080").replace(/^http/, "ws");
+    const client = new Client({
+      brokerURL: `${wsBase}/ws-cineve`,
+      reconnectDelay: 5000,
+      onConnect: () => {
+        client.subscribe(`/topic/showtimes/${id}`, (frame) => {
+          const body = JSON.parse(frame.body) as {
+            updatedSeats?: { seatId: number; status: string }[];
+          };
+          const updates = body.updatedSeats ?? [];
+          if (!updates.length) return;
+          setMap((prev) => {
+            if (!prev) return prev;
+            const mine = new Set(selectedRef.current);
+            const seats = prev.seats.map((seat) => {
+              const next = updates.find((u) => u.seatId === seat.seatId);
+              if (!next) return seat;
+              if (seat.status === "HOLD_MINE" && next.status === "HOLD") return seat;
+              if (next.status === "HOLD" && mine.has(seat.seatId) && holdIdRef.current) {
+                return { ...seat, status: "HOLD_MINE" as const };
+              }
+              return { ...seat, status: next.status as SeatCell["status"] };
+            });
+            return { ...prev, seats };
+          });
+        });
+      },
+    });
+    client.activate();
+    return () => {
+      clearInterval(t);
+      void client.deactivate();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -127,27 +177,54 @@ export default function SeatMapPage({ channel }: { channel: "ONLINE" | "POS" }) 
 
   const toggle = (seat: SeatCell) => {
     if (seat.status === "BOOKED" || seat.status === "HOLD") return;
+    const pair = seat.pairSeatId ? map?.seats.find((s) => s.seatId === seat.pairSeatId) : undefined;
+    if (pair && (pair.status === "BOOKED" || pair.status === "HOLD")) {
+      setErr("Ghế đôi còn lại đang được giữ");
+      return;
+    }
+    const group = pair ? [seat.seatId, pair.seatId] : [seat.seatId];
     const cur = selectedRef.current;
     let next: number[];
-    if (cur.includes(seat.seatId)) {
-      next = cur.filter((x) => x !== seat.seatId);
-    } else if (cur.length >= MAX_SEATS) {
-      setErr(`Tối đa ${MAX_SEATS} ghế mỗi giao dịch`);
-      return;
+    const adding = !cur.includes(seat.seatId);
+    if (!adding) {
+      next = cur.filter((x) => !group.includes(x));
     } else {
-      next = [...cur, seat.seatId];
+      next = [...cur];
+      for (const seatId of group) {
+        if (!next.includes(seatId)) next.push(seatId);
+      }
+      if (next.length > MAX_SEATS) {
+        setErr(`Tối đa ${MAX_SEATS} ghế mỗi giao dịch`);
+        return;
+      }
+    }
+    if (adding && map) {
+      const gap = singleGapFromPaid(map.seats, next);
+      if (gap) {
+        setErr(gap);
+        notifyError({ response: { data: { message: gap } } }, gap);
+        return;
+      }
     }
     selectedRef.current = next;
     setSelected(next);
     setErr("");
     syncHold(next, guest).catch((e: unknown) => {
-      const msg = (e as { response?: { data?: { message?: string; code?: string } } })?.response?.data;
-      setErr(msg?.code === "SEAT_TAKEN" ? "Ghế vừa bị người khác giữ trước. Chọn ghế khác." : msg?.message || "Không giữ được ghế");
+      setErr(errorText(e, "Không giữ được ghế"));
+      notifyError(e, "Không giữ được ghế");
       load(true);
     });
   };
 
   const holdAndGo = async () => {
+    if (map) {
+      const gap = singleGapFromPaid(map.seats, selectedRef.current);
+      if (gap) {
+        setErr(gap);
+        notifyError({ response: { data: { message: gap } } }, gap);
+        return;
+      }
+    }
     setErr("");
     setBusy(true);
     try {
@@ -156,8 +233,8 @@ export default function SeatMapPage({ channel }: { channel: "ONLINE" | "POS" }) 
       if (!rid) throw new Error("Chưa giữ được ghế");
       nav(channel === "POS" ? `/pos/concessions/${rid}` : `/concessions/${rid}`);
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { message?: string; code?: string } } })?.response?.data;
-      setErr(msg?.code === "SEAT_TAKEN" ? "Ghế vừa bị người khác giữ trước. Chọn ghế khác." : msg?.message || "Không giữ được ghế");
+      setErr(errorText(e, "Không giữ được ghế"));
+      notifyError(e, "Không giữ được ghế");
       load(true);
     } finally {
       setBusy(false);
@@ -173,6 +250,7 @@ export default function SeatMapPage({ channel }: { channel: "ONLINE" | "POS" }) 
       <p className="muted">{map.roomName} · {map.startAt.replace("T", " ").slice(0, 16)}</p>
       <p className="muted">
         Ghế được khóa ngay khi chọn (giữ {map.holdMinutes} phút, không gia hạn khi đổi ghế). Ai giữ trước trên server mới được bán.
+        Ghế đã thanh toán không cho đặt cách đúng 1 ghế trống; ghế đang giữ chưa thanh toán thì vẫn đặt được.
       </p>
       <HoldClock
         expiresAt={expiresAt}
@@ -186,6 +264,7 @@ export default function SeatMapPage({ channel }: { channel: "ONLINE" | "POS" }) 
           setSelected([]);
           selectedRef.current = [];
           setErr("Hết thời gian giữ ghế. Chọn lại.");
+          notifyError({ response: { data: { code: "HOLD_EXPIRED" } } }, "Hết thời gian giữ ghế");
           load(true);
         }}
       />
@@ -196,16 +275,42 @@ export default function SeatMapPage({ channel }: { channel: "ONLINE" | "POS" }) 
           <input value={guest} onChange={(e) => setGuest(e.target.value)} />
         </div>
       )}
-      <SeatGrid seats={map.seats} selected={selected} onToggle={toggle} />
-      <div className="row" style={{ justifyContent: "space-between", marginTop: 16 }}>
+      <div className="seat-zoom">
+        <button type="button" className="btn btn-outline" onClick={() => setZoom((z) => Math.max(0.7, Number((z - 0.1).toFixed(2))))}>−</button>
+        <button type="button" className="btn btn-outline" onClick={() => setZoom(1)}>100%</button>
+        <button type="button" className="btn btn-outline" onClick={() => setZoom((z) => Math.min(1.8, Number((z + 0.1).toFixed(2))))}>+</button>
+      </div>
+      <div
+        className="seat-scroll-container"
+        onWheel={(e) => {
+          if (!e.ctrlKey) return;
+          e.preventDefault();
+          setZoom((z) => Math.min(1.8, Math.max(0.7, Number((z + (e.deltaY < 0 ? 0.1 : -0.1)).toFixed(2)))));
+        }}
+      >
+        <div className="seat-stage" style={{ transform: `scale(${zoom})` }}>
+          <SeatGrid seats={map.seats} selected={selected} onToggle={toggle} />
+        </div>
+        <div className="seat-scroll-hint">‹ Vuốt ngang để xem toàn bộ sơ đồ ghế ›</div>
+      </div>
+      <div className="booking-dock">
         <div>
           <div className="muted">
-            {selectedSeats.map((s) => s.label).join(", ") || `Chưa chọn ghế (tối đa ${MAX_SEATS})`} · {user?.username}
+            {selectedSeats.length > 0 ? (
+              <strong>{selectedSeats.map((s) => s.label).join(", ")} ({selectedSeats.length} ghế)</strong>
+            ) : (
+              `Chưa chọn ghế (tối đa ${MAX_SEATS})`
+            )}{" "}
+            · {user?.username}
           </div>
           <div className="price">{total.toLocaleString()}đ</div>
         </div>
         <div className="row">
-          <button type="button" className="btn btn-outline" onClick={() => void abortSale()}>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => void abortSale().then(() => notifyOk("Đã hủy giữ chỗ"))}
+          >
             Hủy giao dịch
           </button>
           <button className="btn btn-yellow" disabled={selected.length === 0 || busy} onClick={holdAndGo}>

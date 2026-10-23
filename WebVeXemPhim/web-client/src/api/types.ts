@@ -22,6 +22,8 @@ export type Movie = {
   castNames?: string;
   releaseDate?: string;
   favoriteCount?: number;
+  ratingAverage?: number;
+  ratingCount?: number;
 };
 
 export type Page<T> = {
@@ -63,6 +65,7 @@ export type SeatCell = {
   type: string;
   status: "AVAILABLE" | "HOLD" | "HOLD_MINE" | "BOOKED";
   price: number;
+  pairSeatId?: number | null;
 };
 
 export type SeatMap = {
@@ -95,9 +98,11 @@ export type Reservation = {
   concessionsSubtotal?: number;
   totalAmount: number;
   holdExpiresAt?: string;
-  tickets: { ticketCode: string; seatLabel: string; qrPayload: string }[];
+  tickets: { ticketCode: string; seatLabel: string; qrPayload: string; status?: string }[];
   seatLabels: string[];
   concessions?: { productId: number; name: string; unitPrice: number; qty: number; lineTotal: number }[];
+  discountAmount?: number;
+  voucherCode?: string | null;
 };
 
 export type ConcessionProduct = {
@@ -106,6 +111,42 @@ export type ConcessionProduct = {
   price: number;
   type: string;
   status: string;
+  imageUrl?: string | null;
+  description?: string | null;
+  badge?: string | null;
+};
+
+export type VoucherOffer = {
+  code: string;
+  discountType: string;
+  discountValue: number;
+  minOrderAmount?: number;
+  discountAmount: number;
+};
+
+export type Review = {
+  id: number;
+  movieId: number;
+  username: string;
+  rating: number;
+  comment?: string | null;
+  createdAt?: string;
+  mine: boolean;
+};
+
+export type PosShift = {
+  id: number;
+  status: string;
+  openingCash: number;
+  cashSales?: number | null;
+  cardSales?: number | null;
+  snackSales?: number | null;
+  ticketCount?: number;
+  expectedCash?: number | null;
+  actualCash?: number | null;
+  difference?: number | null;
+  openedAt?: string;
+  closedAt?: string | null;
 };
 
 export type RevenueMoney = {

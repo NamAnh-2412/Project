@@ -15,6 +15,7 @@ import {
 } from "../../api/catalogApi";
 import type { Movie } from "../../api/types";
 import { youtubeEmbedSrc, youtubeId } from "../../lib/youtube";
+import { errorText, notifyError, notifyOk } from "../../lib/notify";
 
 const MAX_POSTER_BYTES = 5 * 1024 * 1024;
 const POSTER_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -44,6 +45,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function MovieAdminPage() {
   const qc = useQueryClient();
+  const [searchInput, setSearchInput] = useState("");
   const [name, setName] = useState("");
   const [genreId, setGenreId] = useState("ALL");
   const [status, setStatus] = useState("ALL");
@@ -55,6 +57,14 @@ export default function MovieAdminPage() {
   const [posterErr, setPosterErr] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [formErr, setFormErr] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setName(searchInput.trim());
+      setPage(0);
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const moviesQ = useQuery({
     queryKey: ["admin-movies", name, genreId, status, page, sort],
@@ -138,10 +148,12 @@ export default function MovieAdminPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-movies"] });
       closeForm();
+      notifyOk("Đã lưu phim");
     },
     onError: (e: unknown) => {
-      const msg = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-      setFormErr(msg || "Không lưu được phim");
+      const msg = errorText(e, "Không lưu được phim");
+      setFormErr(msg);
+      notifyError(e, msg);
     },
   });
 
@@ -228,13 +240,47 @@ export default function MovieAdminPage() {
         </button>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <input
-          className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
-          placeholder="Tìm theo tên..."
-          value={name}
-          onChange={(e) => { setName(e.target.value); setPage(0); }}
-        />
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[240px] flex-1">
+          <input
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
+            placeholder="Tìm theo tên phim (tự động lọc)..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+          {searchInput && (
+            <button
+              type="button"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400 hover:text-white"
+              onClick={() => setSearchInput("")}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-1 rounded-lg border border-zinc-800 bg-zinc-900/80 p-1">
+          {[
+            ["ALL", "Tất cả"],
+            ["SHOWING", "Đang chiếu"],
+            ["COMING", "Sắp chiếu"],
+            ["HIDDEN", "Ngừng chiếu"],
+          ].map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${
+                status === val
+                  ? "bg-yellow-400 text-zinc-900 shadow-sm"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+              onClick={() => { setStatus(val); setPage(0); }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         <select
           className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
           value={genreId}
@@ -245,16 +291,7 @@ export default function MovieAdminPage() {
             <option key={g.id} value={g.id}>{g.name}</option>
           ))}
         </select>
-        <select
-          className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
-          value={status}
-          onChange={(e) => { setStatus(e.target.value); setPage(0); }}
-        >
-          <option value="ALL">Mọi trạng thái</option>
-          <option value="SHOWING">Đang chiếu</option>
-          <option value="COMING">Sắp chiếu</option>
-          <option value="HIDDEN">Ngừng chiếu</option>
-        </select>
+
         <select
           className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
           value={sort}
@@ -295,12 +332,16 @@ export default function MovieAdminPage() {
                 </td>
                 <td className="px-3 py-2">{m.genreName}</td>
                 <td className="px-3 py-2">{m.durationMinutes} phút</td>
-                <td className="px-3 py-2">{STATUS_LABEL[m.status] || m.status}</td>
+                <td className="px-3 py-2">
+                  <span className={`status-pill ${m.status.toLowerCase()}`}>
+                    {STATUS_LABEL[m.status] || m.status}
+                  </span>
+                </td>
                 <td className="px-3 py-2 text-right">
                   <Link className="mr-2 font-semibold text-zinc-200 hover:text-white" to={`/movies/${m.id}`}>Xem</Link>
-                  <button className="mr-2 font-semibold text-yellow-400" onClick={() => openEdit(m)}>Sửa</button>
+                  <button className="mr-2 font-semibold text-yellow-400 hover:text-yellow-300" onClick={() => openEdit(m)}>Sửa</button>
                   {m.status !== "HIDDEN" && (
-                    <button className="font-semibold text-red-400" onClick={() => hideMut.mutate(m.id)}>Ngừng</button>
+                    <button className="font-semibold text-red-400 hover:text-red-300" onClick={() => hideMut.mutate(m.id)}>Ngừng</button>
                   )}
                 </td>
               </tr>

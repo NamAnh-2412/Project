@@ -2,11 +2,14 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register } from "../api/authApi";
 import { useAuth } from "../context/AuthContext";
+import PasswordField from "../components/PasswordField";
+import { notifyError, notifyOk } from "../lib/notify";
 
 export default function RegisterPage() {
   const { login } = useAuth();
   const nav = useNavigate();
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
 
@@ -14,11 +17,14 @@ export default function RegisterPage() {
     e.preventDefault();
     setErr("");
     try {
-      await register(username, password);
+      await register(username, password, email);
       await login(username, password);
+      notifyOk("Đã tạo tài khoản");
       nav("/");
-    } catch {
-      setErr("Không đăng ký được (username trùng hoặc mật khẩu ngắn)");
+    } catch (e) {
+      const text = "Không đăng ký được (trùng tên, trùng email hoặc mật khẩu ngắn)";
+      setErr(text);
+      notifyError(e, text);
     }
   };
 
@@ -33,8 +39,12 @@ export default function RegisterPage() {
             <input value={username} onChange={(e) => setUsername(e.target.value)} />
           </div>
           <div className="field">
+            <label>Email</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </div>
+          <div className="field">
             <label>Mật khẩu</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordField value={password} onChange={setPassword} autoComplete="new-password" />
           </div>
           <button className="btn btn-yellow" type="submit">Tạo tài khoản</button>
         </form>

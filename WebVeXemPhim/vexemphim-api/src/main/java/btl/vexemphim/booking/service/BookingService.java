@@ -16,27 +16,26 @@ import btl.vexemphim.catalog.entity.Showtime;
 import btl.vexemphim.catalog.repository.SeatRepository;
 import btl.vexemphim.catalog.service.ConcessionService;
 import btl.vexemphim.catalog.service.ShowtimeService;
+import btl.vexemphim.booking.event.SeatChangedEvent;
 import btl.vexemphim.common.exception.ApiException;
 import btl.vexemphim.common.security.AuthContext;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Service
 @Transactional(readOnly = true)
@@ -50,7 +49,14 @@ public class BookingService {
     private final TicketRepository ticketRepository;
     private final PaymentRepository paymentRepository;
     private final int holdMinutes;
-    private final BigDecimal vipMultiplier;
+    private final VoucherService voucherService;
+    private final SeatHoldSupport seatHoldSupport;
+    private final ReservationViews views;
+    private final TicketMailer ticketMailer;
+    private final RefundNoticeService refundNoticeService;
+    private final ApplicationEventPublisher events;
+    private final int cancelBeforeMinutes;
+    private final PosShiftService posShiftService;
 
     @PersistenceContext
     private EntityManager em;
@@ -63,7 +69,14 @@ public class BookingService {
                           TicketRepository ticketRepository,
                           PaymentRepository paymentRepository,
                           @Value("${app.hold-minutes:8}") int holdMinutes,
-                          @Value("${app.vip-multiplier:1.2}") BigDecimal vipMultiplier) {
+                          VoucherService voucherService,
+                          TicketMailer ticketMailer,
+                          RefundNoticeService refundNoticeService,
+                          ApplicationEventPublisher events,
+                          @Value("${app.cancel-before-minutes:30}") int cancelBeforeMinutes,
+                          PosShiftService posShiftService,
+                          SeatHoldSupport seatHoldSupport,
+                          ReservationViews views) {
         this.showtimeService = showtimeService;
         this.concessionService = concessionService;
         this.seatRepository = seatRepository;
@@ -72,7 +85,14 @@ public class BookingService {
         this.ticketRepository = ticketRepository;
         this.paymentRepository = paymentRepository;
         this.holdMinutes = holdMinutes;
-        this.vipMultiplier = vipMultiplier;
+        this.voucherService = voucherService;
+        this.seatHoldSupport = seatHoldSupport;
+        this.views = views;
+        this.ticketMailer = ticketMailer;
+        this.refundNoticeService = refundNoticeService;
+        this.events = events;
+        this.cancelBeforeMinutes = cancelBeforeMinutes;
+        this.posShiftService = posShiftService;
     }
 
     public SeatMapResponse seatMap(Long showtimeId) {
@@ -85,7 +105,7 @@ public class BookingService {
         List<Seat> seats = seatRepository.findByRoom_IdOrderByRowLabelAscNumberAsc(st.getRoom().getId());
         List<SeatMapResponse.SeatCell> cells = new ArrayList<>();
         for (Seat seat : seats) {
-            BigDecimal price = priceOf(st, seat);
+            BigDecimal price = seatHoldSupport.priceOf(st, seat);
             String status = "AVAILABLE";
             ReservationSeat rs = taken.get(seat.getId());
             if (rs != null) {
@@ -100,7 +120,7 @@ public class BookingService {
             }
             cells.add(new SeatMapResponse.SeatCell(
                     seat.getId(), seat.label(), seat.getRowLabel(), seat.getNumber(),
-                    seat.getType(), status, price));
+                    seat.getType(), status, price, seat.getPairSeatId()));
         }
         return new SeatMapResponse(st.getId(), st.getMovie().getTitle(), st.getStartAt(),
                 st.getRoom().getName(), holdMinutes, cells);
@@ -110,9 +130,6 @@ public class BookingService {
     public HoldResponse hold(HoldRequest req) {
         String role = AuthContext.role();
         Long userId = AuthContext.userId();
-        if (req.seatIds().size() > 8) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION", "Tối đa 8 ghế / lần giữ");
-        }
         if ("ONLINE".equals(req.channel()) && !"CUSTOMER".equals(role)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "CUSTOMER mới hold ONLINE");
         }
@@ -120,6 +137,10 @@ public class BookingService {
             throw new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "CASHIER mới hold POS");
         }
         Showtime st = showtimeService.get(req.showtimeId());
+        List<Long> seatIds = seatHoldSupport.expandCouples(st.getRoom().getId(), req.seatIds());
+        if (seatIds.size() > 8) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION", "Tối đa 8 ghế / lần giữ");
+        }
         em.lock(st, LockModeType.PESSIMISTIC_WRITE);
         LocalDateTime now = LocalDateTime.now();
         if (!"SCHEDULED".equals(st.getStatus())) {
@@ -140,11 +161,12 @@ public class BookingService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "MOVIE_NOT_ON_SALE", "Phim chưa mở bán vé");
         }
         Reservation mine = findMyOpenHold(st.getId(), userId, req.channel());
+        seatHoldSupport.assertNoSingleGapBesidePaid(st, seatIds, mine);
         try {
             if (mine != null) {
-                return replaceHoldSeats(mine, st, req, now);
+                return seatHoldSupport.replaceHoldSeats(mine, st, req, seatIds, now);
             }
-            return createHold(st, req, userId, now);
+            return seatHoldSupport.createHold(st, req, seatIds, userId, now);
         } catch (DataIntegrityViolationException ex) {
             throw new ApiException(HttpStatus.CONFLICT, "SEAT_TAKEN", "Ghế đã được giữ hoặc bán");
         }
@@ -174,7 +196,7 @@ public class BookingService {
             res.getConcessions().add(row);
         }
         recalcTotal(res);
-        return toResponse(res);
+        return views.toResponse(res);
     }
 
     @Transactional
@@ -190,6 +212,26 @@ public class BookingService {
         return finalizePayment(res, req == null || req.paymentMethod() == null ? "ONLINE_MOCK" : req.paymentMethod());
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public ReservationResponse confirmGateway(Long id, String method) {
+        Reservation res = get(id);
+        return finalizePayment(res, method);
+    }
+
+    @Transactional
+    public ReservationResponse applyVoucher(Long id, String code) {
+        Reservation res = get(id);
+        assertHoldOwner(res);
+        assertHoldOpen(res);
+        if (!"ONLINE".equals(res.getChannel())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION", "Mã giảm giá chỉ áp dụng khi đặt online");
+        }
+        BigDecimal gross = ReservationViews.seatsSubtotal(res).add(ReservationViews.concessionsSubtotal(res));
+        voucherService.apply(res, code, gross);
+        recalcTotal(res);
+        return views.toResponse(res);
+    }
+
     @Transactional
     public ReservationResponse confirmCash(Long id) {
         Reservation res = get(id);
@@ -200,6 +242,7 @@ public class BookingService {
         if (!"POS".equals(res.getChannel())) {
             throw new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Sai kênh");
         }
+        res.setShiftId(posShiftService.openShiftId(userId));
         return finalizePayment(res, "CASH");
     }
 
@@ -220,10 +263,55 @@ public class BookingService {
         expire(res, "CANCELLED");
     }
 
+    @Transactional
+    public ReservationResponse cancelOnlineTicket(Long id) {
+        Reservation res = get(id);
+        Long userId = AuthContext.userId();
+        if (!"CUSTOMER".equals(AuthContext.role()) || userId == null || !userId.equals(res.getCustomerUserId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Không phải chủ vé");
+        }
+        if (!"ONLINE".equals(res.getChannel())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "NOT_ONLINE", "Chỉ hủy vé đặt online");
+        }
+        if (!"CONFIRMED".equals(res.getStatus())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION", "Chỉ hủy vé đã thanh toán");
+        }
+        for (Ticket ticket : res.getTickets()) {
+            if ("CHECKED_IN".equals(ReservationViews.ticketStatus(ticket))) {
+                throw new ApiException(HttpStatus.CONFLICT, "CHECKED_IN_BLOCK", "Vé đã soát, không hủy được");
+            }
+        }
+        Showtime st = showtimeService.get(res.getShowtimeId());
+        em.lock(st, LockModeType.PESSIMISTIC_WRITE);
+        LocalDateTime start = st.getStartAt() != null ? st.getStartAt() : res.getStartAt();
+        if (start == null || !LocalDateTime.now().isBefore(start.minusMinutes(cancelBeforeMinutes))) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "TOO_LATE",
+                    "Chỉ hủy trước giờ chiếu " + cancelBeforeMinutes + " phút");
+        }
+        BigDecimal refund = res.getTotalAmount() == null ? BigDecimal.ZERO : res.getTotalAmount();
+        Payment payment = new Payment();
+        payment.setReservationId(res.getId());
+        payment.setMethod("REFUND");
+        payment.setStatus("REFUNDED");
+        payment.setAmount(refund);
+        payment.setPaidAt(LocalDateTime.now());
+        paymentRepository.save(payment);
+        for (Ticket ticket : res.getTickets()) {
+            ticket.setStatus("CANCELLED");
+        }
+        publish(res, "AVAILABLE");
+        res.getSeats().clear();
+        res.setStatus("REFUNDED");
+        reservationRepository.saveAndFlush(res);
+        refundNoticeService.notifyOnlineRefund(res);
+        return views.toResponse(res);
+    }
+
     public List<ReservationResponse> myBookings() {
         Long userId = AuthContext.userId();
-        return reservationRepository.findByCustomerUserIdAndStatusOrderByCreatedAtDesc(userId, "CONFIRMED")
-                .stream().map(this::toResponse).toList();
+        return reservationRepository
+                .findByCustomerUserIdAndStatusInOrderByCreatedAtDesc(userId, List.of("CONFIRMED", "REFUNDED"))
+                .stream().map(views::toResponse).toList();
     }
 
     public ReservationResponse getOne(Long id) {
@@ -236,7 +324,7 @@ public class BookingService {
         if (!ok) {
             throw new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Không xem được vé người khác");
         }
-        return toResponse(res);
+        return views.toResponse(res);
     }
 
     public OccupancyResponse occupancy(Long showtimeId) {
@@ -246,22 +334,25 @@ public class BookingService {
     }
 
     public TicketLookupResponse lookupTicket(String code) {
-        return toLookup(ticketByCode(code));
+        return views.toLookup(ticketByCode(code));
     }
 
     @Transactional
     public TicketLookupResponse checkIn(String code) {
         Ticket t = ticketByCode(code);
         Reservation r = t.getReservation();
+        if ("REFUNDED".equals(r.getStatus()) || "CANCELLED".equals(ReservationViews.ticketStatus(t))) {
+            throw new ApiException(HttpStatus.CONFLICT, "TICKET_CANCELLED", "Vé đã hủy");
+        }
         if (!"CONFIRMED".equals(r.getStatus())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "NOT_PAID", "Vé chưa thanh toán");
         }
-        if ("CHECKED_IN".equals(ticketStatus(t))) {
+        if ("CHECKED_IN".equals(ReservationViews.ticketStatus(t))) {
             throw new ApiException(HttpStatus.CONFLICT, "ALREADY_CHECKED_IN", "Vé đã soát");
         }
         t.setStatus("CHECKED_IN");
         t.setCheckedInAt(LocalDateTime.now());
-        return toLookup(t);
+        return views.toLookup(t);
     }
 
     @Transactional
@@ -274,7 +365,7 @@ public class BookingService {
 
     private ReservationResponse finalizePayment(Reservation res, String method) {
         if ("CONFIRMED".equals(res.getStatus())) {
-            return toResponse(res);
+            return views.toResponse(res);
         }
         if (!"HOLD".equals(res.getStatus())) {
             throw new ApiException(HttpStatus.CONFLICT, "HOLD_EXPIRED", "Giữ chỗ không còn hiệu lực");
@@ -284,15 +375,22 @@ public class BookingService {
             throw new ApiException(HttpStatus.CONFLICT, "HOLD_EXPIRED", "Hết thời gian giữ ghế");
         }
         assertShowtimeSellable(res);
+        if (voucherService.consume(res.getVoucherId()) == 0) {
+            voucherService.clear(res);
+            recalcTotal(res);
+            throw new ApiException(HttpStatus.CONFLICT, "VOUCHER_LIMIT_REACHED", "Mã giảm giá đã hết lượt sử dụng");
+        }
         res.setStatus("CONFIRMED");
         res.setHoldExpiresAt(null);
-        Payment p = new Payment();
-        p.setReservationId(res.getId());
-        p.setMethod(method);
-        p.setStatus("SUCCESS");
-        p.setAmount(res.getTotalAmount());
-        p.setPaidAt(LocalDateTime.now());
-        paymentRepository.save(p);
+        if (!"PAYOS".equals(method) && !"MOMO".equals(method)) {
+            Payment p = new Payment();
+            p.setReservationId(res.getId());
+            p.setMethod(method);
+            p.setStatus("SUCCESS");
+            p.setAmount(res.getTotalAmount());
+            p.setPaidAt(LocalDateTime.now());
+            paymentRepository.save(p);
+        }
         int i = 1;
         for (ReservationSeat seat : res.getSeats()) {
             Ticket t = new Ticket();
@@ -304,10 +402,13 @@ public class BookingService {
             res.getTickets().add(t);
             i++;
         }
-        return toResponse(res);
+        publish(res, "BOOKED");
+        ticketMailer.sendOnlineTickets(res);
+        return views.toResponse(res);
     }
 
     private void expire(Reservation res, String status) {
+        publish(res, "AVAILABLE");
         res.getSeats().clear();
         res.getConcessions().clear();
         res.setStatus(status);
@@ -334,19 +435,7 @@ public class BookingService {
     }
 
     private void recalcTotal(Reservation res) {
-        res.setTotalAmount(seatsSubtotal(res).add(concessionsSubtotal(res)));
-    }
-
-    private static BigDecimal seatsSubtotal(Reservation r) {
-        return r.getSeats().stream()
-                .map(s -> s.getPrice() == null ? BigDecimal.ZERO : s.getPrice())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private static BigDecimal concessionsSubtotal(Reservation r) {
-        return r.getConcessions().stream()
-                .map(ReservationConcession::lineTotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        voucherService.reprice(res, ReservationViews.seatsSubtotal(res).add(ReservationViews.concessionsSubtotal(res)));
     }
 
     private Reservation findMyOpenHold(Long showtimeId, Long userId, String channel) {
@@ -368,78 +457,6 @@ public class BookingService {
         return open;
     }
 
-    private HoldResponse replaceHoldSeats(Reservation mine, Showtime st, HoldRequest req, LocalDateTime now) {
-        Set<Long> wanted = new LinkedHashSet<>(req.seatIds());
-        mine.getSeats().removeIf(rs -> !wanted.contains(rs.getSeatId()));
-        reservationRepository.flush();
-        Set<Long> have = new HashSet<>();
-        for (ReservationSeat rs : mine.getSeats()) {
-            have.add(rs.getSeatId());
-        }
-        for (Long seatId : wanted) {
-            if (have.contains(seatId)) {
-                continue;
-            }
-            attachSeat(mine, st, seatId);
-        }
-        mine.setGuestName(req.guestName());
-        if (mine.getHoldExpiresAt() == null) {
-            mine.setHoldExpiresAt(now.plusMinutes(holdMinutes));
-        }
-        recalcTotal(mine);
-        reservationRepository.saveAndFlush(mine);
-        return toHoldResponse(mine);
-    }
-
-    private HoldResponse createHold(Showtime st, HoldRequest req, Long userId, LocalDateTime now) {
-        Reservation res = new Reservation();
-        res.setShowtimeId(st.getId());
-        res.setMovieId(st.getMovie().getId());
-        res.setMovieTitle(st.getMovie().getTitle());
-        res.setStartAt(st.getStartAt());
-        res.setRoomName(st.getRoom().getName());
-        res.setChannel(req.channel());
-        res.setGuestName(req.guestName());
-        res.setStatus("HOLD");
-        res.setHoldExpiresAt(now.plusMinutes(holdMinutes));
-        if ("ONLINE".equals(req.channel())) {
-            res.setCustomerUserId(userId);
-        } else {
-            res.setCashierUserId(userId);
-        }
-        for (Long seatId : req.seatIds()) {
-            attachSeat(res, st, seatId);
-        }
-        recalcTotal(res);
-        reservationRepository.saveAndFlush(res);
-        return toHoldResponse(res);
-    }
-
-    private void attachSeat(Reservation res, Showtime st, Long seatId) {
-        if (reservationSeatRepository.existsByShowtimeIdAndSeatId(st.getId(), seatId)) {
-            throw new ApiException(HttpStatus.CONFLICT, "SEAT_TAKEN", "Ghế đã được giữ hoặc bán");
-        }
-        Seat seat = seatRepository.findById(seatId)
-                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION", "Ghế không tồn tại"));
-        if (!seat.getRoom().getId().equals(st.getRoom().getId())) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION", "Ghế không thuộc phòng suất này");
-        }
-        ReservationSeat rs = new ReservationSeat();
-        rs.setReservation(res);
-        rs.setShowtimeId(st.getId());
-        rs.setSeatId(seatId);
-        rs.setSeatLabel(seat.label());
-        rs.setPrice(priceOf(st, seat));
-        res.getSeats().add(rs);
-    }
-
-    private HoldResponse toHoldResponse(Reservation res) {
-        List<HoldResponse.HeldSeat> held = res.getSeats().stream()
-                .map(s -> new HoldResponse.HeldSeat(s.getSeatId(), s.getSeatLabel(), s.getPrice()))
-                .toList();
-        return new HoldResponse(res.getId(), res.getStatus(), res.getHoldExpiresAt(), res.getTotalAmount(), held);
-    }
-
     private void assertShowtimeSellable(Reservation res) {
         Showtime st = showtimeService.get(res.getShowtimeId());
         LocalDateTime now = LocalDateTime.now();
@@ -453,34 +470,34 @@ public class BookingService {
         }
     }
 
+    @Transactional
+    public byte[] mockPaymentQr(Long id) {
+        Reservation res = get(id);
+        Long userId = AuthContext.userId();
+        if (!"CUSTOMER".equals(AuthContext.role()) || userId == null || !userId.equals(res.getCustomerUserId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Không phải chủ giữ chỗ");
+        }
+        if (!"ONLINE".equals(res.getChannel())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION", "QR ảo chỉ dùng cho đặt vé online");
+        }
+        assertHoldOpen(res);
+        long amount = res.getTotalAmount() == null ? 0 : res.getTotalAmount().longValue();
+        return QrCodes.png("CINEVE|" + res.getId() + "|" + amount);
+    }
+
     private Reservation get(Long id) {
         return reservationRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND", "Không tìm thấy đặt chỗ"));
     }
 
-    private BigDecimal priceOf(Showtime st, Seat seat) {
-        BigDecimal base = st.getBasePrice();
-        if ("VIP".equalsIgnoreCase(seat.getType())) {
-            return base.multiply(vipMultiplier).setScale(0, RoundingMode.HALF_UP);
+    private void publish(Reservation res, String status) {
+        if (res.getShowtimeId() == null || res.getSeats().isEmpty()) {
+            return;
         }
-        return base;
-    }
-
-    private ReservationResponse toResponse(Reservation r) {
-        List<ReservationResponse.TicketDto> tickets = r.getTickets().stream()
-                .map(t -> new ReservationResponse.TicketDto(t.getTicketCode(),
-                        seatFromTicket(t, r), t.getQrPayload()))
+        List<SeatChangedEvent.SeatPatch> seats = res.getSeats().stream()
+                .map(s -> new SeatChangedEvent.SeatPatch(s.getSeatId(), status))
                 .toList();
-        List<String> labels = r.getSeats().stream().map(ReservationSeat::getSeatLabel).toList();
-        List<ReservationResponse.ConcessionDto> concessions = r.getConcessions().stream()
-                .map(c -> new ReservationResponse.ConcessionDto(
-                        c.getProductId(), c.getName(), c.getUnitPrice(), c.getQty(), c.lineTotal()))
-                .toList();
-        BigDecimal seats = seatsSubtotal(r);
-        BigDecimal fnb = concessionsSubtotal(r);
-        return new ReservationResponse(r.getId(), r.getShowtimeId(), r.getStatus(), r.getChannel(), r.getMovieTitle(),
-                r.getStartAt(), r.getRoomName(), r.getGuestName(), seats, fnb, r.getTotalAmount(),
-                r.getHoldExpiresAt(), tickets, labels, concessions);
+        events.publishEvent(new SeatChangedEvent(res.getShowtimeId(), seats));
     }
 
     private Ticket ticketByCode(String code) {
@@ -488,27 +505,4 @@ public class BookingService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND", "Không có mã vé"));
     }
 
-    private static String ticketStatus(Ticket t) {
-        return t.getStatus() == null || t.getStatus().isBlank() ? "ISSUED" : t.getStatus();
-    }
-
-    private TicketLookupResponse toLookup(Ticket t) {
-        Reservation r = t.getReservation();
-        return new TicketLookupResponse(
-                r.getId(),
-                t.getTicketCode(),
-                r.getMovieTitle(),
-                r.getRoomName(),
-                r.getStartAt(),
-                seatFromTicket(t, r),
-                ticketStatus(t),
-                t.getCheckedInAt());
-    }
-
-    private String seatFromTicket(Ticket t, Reservation r) {
-        if (t.getQrPayload() != null && t.getQrPayload().contains("|")) {
-            return t.getQrPayload().substring(t.getQrPayload().indexOf('|') + 1);
-        }
-        return r.getSeats().isEmpty() ? "" : r.getSeats().get(0).getSeatLabel();
-    }
 }

@@ -10,6 +10,8 @@ public record ConcessionRequest(
         @NotBlank String name,
         @NotNull @DecimalMin("0") BigDecimal price,
         @NotBlank String type,
-        String status
+        String status,
+        String description,
+        String badge
 ) {
 }

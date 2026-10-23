@@ -28,7 +28,7 @@ export default function PosPrintPage() {
 
   return (
     <div className="page">
-      <div className="panel print-area" id="print-area">
+        <div className="panel print-area k80" id="print-area">
         <h2>{name}</h2>
         <p>{res.movieTitle}</p>
         <p>{res.roomName} · {res.startAt?.replace("T", " ").slice(0, 16)}</p>

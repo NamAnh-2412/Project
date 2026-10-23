@@ -2,9 +2,15 @@ package btl.vexemphim.catalog.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "movies")
+@EntityListeners(AuditingEntityListener.class)
 public class Movie {
 
     @Id
@@ -44,10 +50,24 @@ public class Movie {
     @Column(length = 16)
     private String status = "SHOWING";
 
+    @Column(name = "rating_average", precision = 3, scale = 1)
+    private java.math.BigDecimal ratingAverage = java.math.BigDecimal.ZERO;
+
+    @Column(name = "rating_count")
+    private Integer ratingCount = 0;
+
     @ManyToOne
     @JoinColumn(name = "genre_id")
     @JsonBackReference
     private Genre genre;
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -73,4 +93,10 @@ public class Movie {
     public void setStatus(String status) { this.status = status; }
     public Genre getGenre() { return genre; }
     public void setGenre(Genre genre) { this.genre = genre; }
+    public java.math.BigDecimal getRatingAverage() {
+        return ratingAverage == null ? java.math.BigDecimal.ZERO : ratingAverage;
+    }
+    public void setRatingAverage(java.math.BigDecimal ratingAverage) { this.ratingAverage = ratingAverage; }
+    public int getRatingCount() { return ratingCount == null ? 0 : ratingCount; }
+    public void setRatingCount(int ratingCount) { this.ratingCount = ratingCount; }
 }

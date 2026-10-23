@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createConcession, fetchConcessions, updateConcession } from "../../api/catalogApi";
+import { createConcession, fetchConcessions, updateConcession, uploadConcessionImage } from "../../api/catalogApi";
+import { assetUrl } from "../../lib/assetUrl";
+import { formatVnd } from "../../lib/money";
+import { errorText } from "../../lib/notify";
 import type { ConcessionProduct } from "../../api/types";
 
 const TYPES = [
@@ -9,15 +12,13 @@ const TYPES = [
   { id: "COMBO", label: "Combo" },
 ];
 
-function vnd(n: number) {
-  return `${Number(n).toLocaleString("vi-VN")}đ`;
-}
-
 export default function ConcessionAdminPage() {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [price, setPrice] = useState(45000);
   const [type, setType] = useState("FOOD");
+  const [description, setDescription] = useState("");
+  const [badge, setBadge] = useState("");
   const [err, setErr] = useState("");
   const [editing, setEditing] = useState<ConcessionProduct | null>(null);
 
@@ -29,9 +30,11 @@ export default function ConcessionAdminPage() {
       if (!trimmed) throw new Error("Nhập tên món");
       if (price < 0) throw new Error("Giá không hợp lệ");
       if (editing) {
-        await updateConcession(editing.id, { name: trimmed, price, type, status: editing.status });
+        await updateConcession(editing.id, {
+          name: trimmed, price, type, status: editing.status, description, badge,
+        });
       } else {
-        await createConcession({ name: trimmed, price, type, status: "ACTIVE" });
+        await createConcession({ name: trimmed, price, type, status: "ACTIVE", description, badge });
       }
     },
     onSuccess: () => {
@@ -39,12 +42,13 @@ export default function ConcessionAdminPage() {
       setName("");
       setPrice(45000);
       setType("FOOD");
+      setDescription("");
+      setBadge("");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["admin-concessions"] });
     },
     onError: (e: unknown) => {
-      const msg = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-      setErr(msg || (e instanceof Error ? e.message : "Không lưu được món"));
+      setErr(errorText(e, e instanceof Error ? e.message : "Không lưu được món"));
     },
   });
 
@@ -55,11 +59,12 @@ export default function ConcessionAdminPage() {
         price: Number(p.price),
         type: p.type,
         status: p.status === "ACTIVE" ? "HIDDEN" : "ACTIVE",
+        description: p.description,
+        badge: p.badge,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-concessions"] }),
     onError: (e: unknown) => {
-      const msg = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-      setErr(msg || "Không đổi trạng thái");
+      setErr(errorText(e, "Không đổi trạng thái"));
     },
   });
 
@@ -109,6 +114,14 @@ export default function ConcessionAdminPage() {
             ))}
           </select>
         </label>
+        <label className="flex flex-col gap-1 text-xs font-extrabold uppercase tracking-wide text-zinc-400 sm:col-span-3">
+          Mô tả
+          <input className="rounded-lg border border-zinc-600 bg-zinc-950 px-3 py-2 text-sm font-normal text-zinc-100" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Bắp ngọt, size lớn" />
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-extrabold uppercase tracking-wide text-zinc-400">
+          Nhãn
+          <input className="rounded-lg border border-zinc-600 bg-zinc-950 px-3 py-2 text-sm font-normal text-zinc-100" value={badge} onChange={(e) => setBadge(e.target.value)} placeholder="Bán chạy" />
+        </label>
         <div className="flex items-end gap-2 sm:col-span-4">
           {editing && (
             <button
@@ -119,6 +132,8 @@ export default function ConcessionAdminPage() {
                 setName("");
                 setPrice(45000);
                 setType("FOOD");
+                setDescription("");
+                setBadge("");
               }}
             >
               Hủy sửa
@@ -132,13 +147,33 @@ export default function ConcessionAdminPage() {
       <ul className="list-none space-y-2 p-0">
         {(listQ.data ?? []).map((p) => (
           <li key={p.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-3">
+            {p.imageUrl ? (
+              <img src={assetUrl(p.imageUrl)} alt="" className="h-12 w-12 rounded object-cover" />
+            ) : null}
             <span className="w-16 shrink-0 text-[11px] font-extrabold uppercase tracking-wide text-red-400">
               {TYPES.find((t) => t.id === p.type)?.label || p.type}
             </span>
             <div className="min-w-0 flex-1">
               <div className={`font-extrabold ${p.status === "ACTIVE" ? "text-white" : "text-zinc-500"}`}>{p.name}</div>
-              <div className="text-xs text-zinc-500">{vnd(p.price)}{p.status !== "ACTIVE" ? " · đã ẩn" : ""}</div>
+              <div className="text-xs text-zinc-500">{formatVnd(p.price)}{p.badge ? ` · ${p.badge}` : ""}{p.status !== "ACTIVE" ? " · đã ẩn" : ""}</div>
+              {p.description && <div className="text-xs text-zinc-400">{p.description}</div>}
             </div>
+            <label className="cursor-pointer rounded-lg border border-zinc-600 px-3 py-1.5 text-xs font-extrabold text-zinc-100">
+              Ảnh
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  uploadConcessionImage(p.id, file)
+                    .then(() => qc.invalidateQueries({ queryKey: ["admin-concessions"] }))
+                    .catch(() => setErr("Không tải được ảnh"));
+                  e.target.value = "";
+                }}
+              />
+            </label>
             <button
               type="button"
               className="rounded-lg border border-zinc-600 px-3 py-1.5 text-xs font-extrabold text-zinc-100"
@@ -147,6 +182,8 @@ export default function ConcessionAdminPage() {
                 setName(p.name);
                 setPrice(Number(p.price));
                 setType(p.type);
+                setDescription(p.description || "");
+                setBadge(p.badge || "");
               }}
             >
               Sửa

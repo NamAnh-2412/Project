@@ -19,7 +19,8 @@ public record SeatMapResponse(
             int number,
             String type,
             String status,
-            BigDecimal price
+            BigDecimal price,
+            Long pairSeatId
     ) {
     }
 }

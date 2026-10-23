@@ -9,6 +9,7 @@ import btl.vexemphim.common.security.AuthContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Set;
@@ -20,9 +21,11 @@ public class ConcessionService {
     private static final Set<String> STATUSES = Set.of("ACTIVE", "HIDDEN");
 
     private final ConcessionProductRepository repository;
+    private final FileStorageService fileStorageService;
 
-    public ConcessionService(ConcessionProductRepository repository) {
+    public ConcessionService(ConcessionProductRepository repository, FileStorageService fileStorageService) {
         this.repository = repository;
+        this.fileStorageService = fileStorageService;
     }
 
     public List<ConcessionResponse> list() {
@@ -49,6 +52,8 @@ public class ConcessionService {
         p.setPrice(req.price());
         p.setType(normalizeType(req.type()));
         p.setStatus(normalizeStatus(req.status() == null ? "ACTIVE" : req.status()));
+        p.setDescription(blankToNull(req.description()));
+        p.setBadge(blankToNull(req.badge()));
         repository.save(p);
         return toResponse(p);
     }
@@ -64,6 +69,15 @@ public class ConcessionService {
         p.setPrice(req.price());
         p.setType(normalizeType(req.type()));
         p.setStatus(normalizeStatus(req.status() == null ? p.getStatus() : req.status()));
+        p.setDescription(blankToNull(req.description()));
+        p.setBadge(blankToNull(req.badge()));
+        return toResponse(p);
+    }
+
+    @Transactional
+    public ConcessionResponse uploadImage(Long id, MultipartFile file) {
+        ConcessionProduct p = get(id);
+        p.setImageUrl(fileStorageService.saveImage(file));
         return toResponse(p);
     }
 
@@ -83,7 +97,13 @@ public class ConcessionService {
         return s;
     }
 
+    private static String blankToNull(String value) {
+        if (value == null || value.isBlank()) return null;
+        return value.trim();
+    }
+
     private static ConcessionResponse toResponse(ConcessionProduct p) {
-        return new ConcessionResponse(p.getId(), p.getName(), p.getPrice(), p.getType(), p.getStatus());
+        return new ConcessionResponse(p.getId(), p.getName(), p.getPrice(), p.getType(), p.getStatus(),
+                p.getImageUrl(), p.getDescription(), p.getBadge());
     }
 }

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../api/client";
 import { fetchGenreMovies, fetchGenres, fetchMovies } from "../../api/catalogApi";
+import { errorText } from "../../lib/notify";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
@@ -48,8 +49,7 @@ export default function GenreAdminPage() {
       qc.invalidateQueries({ queryKey: ["genres"] });
     },
     onError: (e: unknown) => {
-      const msg = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-      setErr(msg || (e instanceof Error ? e.message : "Không thêm được"));
+      setErr(errorText(e, e instanceof Error ? e.message : "Không thêm được"));
     },
   });
 

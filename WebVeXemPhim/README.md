@@ -2,7 +2,7 @@
 
 Tài liệu kế hoạch bài tập lớn môn **Phát triển phần mềm hướng dịch vụ**.
 
-Thư mục có **kế hoạch (`docs/`)** và **mã nguồn**: backend SOA `vexemphim-api` (REST) + client React `web-client`.
+Thư mục có **mã nguồn** (backend `vexemphim-api` + client React `web-client`) và **`docs/`** ghi ba phần khó của code đang chạy.
 
 Chạy:
 
@@ -51,8 +51,6 @@ Lý do:
 - Vẫn đúng môn: Client–Server, hợp đồng REST, module tách theo nghiệp vụ, hai kênh dùng chung API đặt ghế.
 - Dễ chạy demo (một backend `:8080` + một frontend `:5173`). Hướng mở: tách module thành process riêng.
 
-Chi tiết: [docs/01-kien-truc-soa.md](docs/01-kien-truc-soa.md).
-
 ## Mục tiêu sản phẩm
 
 Hệ thống bán vé **một rạp**, hai kênh dùng **cùng một bộ API**:
@@ -72,29 +70,22 @@ Ghế, suất, trạng thái giữ/bán nằm ở **module booking**. Hai kênh 
 
 ## Cách đọc tài liệu
 
-Đọc theo thứ tự số:
+Các file này bám code hiện tại: luật ghế, hai kênh, suất chiếu, và kế hoạch nâng cấp.
 
 | File | Nội dung |
 |---|---|
-| [docs/01-kien-truc-soa.md](docs/01-kien-truc-soa.md) | Modular monolith, so SOS / CRS, sơ đồ, 3 tầng |
-| [docs/02-danh-muc-service.md](docs/02-danh-muc-service.md) | Module, package, ranh giới, 3 tầng |
-| [docs/03-mo-hinh-du-lieu.md](docs/03-mo-hinh-du-lieu.md) | Một DB, quan hệ 1-N, unique ghế, hold |
-| [docs/04-hop-dong-api.md](docs/04-hop-dong-api.md) | Path, Pageable, upload, API Key, mã lỗi |
-| [docs/05-luong-nghiep-vu.md](docs/05-luong-nghiep-vu.md) | POS, online, đồng bộ ghế, in vé |
-| [docs/06-bao-mat-va-rbac.md](docs/06-bao-mat-va-rbac.md) | JWT (nâng SOS06) + API Key (SOS10), IDOR |
-| [docs/07-frontend-hai-kenh.md](docs/07-frontend-hai-kenh.md) | Một React, hai kênh, search/page, upload |
-| [docs/08-trien-khai-va-bat.md](docs/08-trien-khai-va-bat.md) | Cổng, `.bat`, JDK, MySQL |
-| [docs/09-kiem-thu-demo-baocao.md](docs/09-kiem-thu-demo-baocao.md) | Postman (đăng nhập tài khoản), demo, báo cáo |
-| [docs/10-lich-code.md](docs/10-lich-code.md) | Các pha khi bắt đầu lập trình |
-| [docs/11-phuong-an-suat-chieu.md](docs/11-phuong-an-suat-chieu.md) | Admin lịch suất theo phòng |
-| [docs/12-khoa-ghe-dong-thoi.md](docs/12-khoa-ghe-dong-thoi.md) | Hold, unique ghế, lock suất, 409 |
-| [docs/13-audit-pos-staff.md](docs/13-audit-pos-staff.md) | Audit POS: bug, smell, gap rạp, thứ tự làm |
+| [docs/01-khoa-ghe.md](docs/01-khoa-ghe.md) | Unique ghế, khóa hàng suất, giữ 8 phút, `409` |
+| [docs/02-hai-kenh.md](docs/02-hai-kenh.md) | Khách và quầy: cửa sổ giờ, thu tiền, soát vé |
+| [docs/03-suat-chieu.md](docs/03-suat-chieu.md) | Chồng giờ, đã bán thì không sửa, ai thấy suất nào |
+| [docs/04-ke-hoach-nang-cap.md](docs/04-ke-hoach-nang-cap.md) | Nâng cấp: auditing, toast, PayOS, mail vé, mã giảm giá, sơ đồ realtime |
+| [docs/05-huy-ve.md](docs/05-huy-ve.md) | Hủy vé đã mua: chưa làm, ghi để hỏi nhóm |
+| [docs/06-postman.md](docs/06-postman.md) | Import Postman + thứ tự chụp test API báo cáo |
 
 ## Stack (bám SOS + nâng chỗ lab ghi “tạm thời”)
 
 - Java 21, Spring Boot, Spring Web, Spring Data JPA, MySQL, Spring Security + JWT (JJWT 0.12.x)
 - React + TypeScript + Vite + Axios + React Router (thay HTML thuần SOS08/09 vì cần hai kênh + sơ đồ ghế)
-- Giao diện **CineVe** nền tối, CTA vàng, bố cục kiểu web rạp (chi tiết: [docs/07](docs/07-frontend-hai-kenh.md))
+- Giao diện **CineVe** nền tối, CTA vàng, bố cục kiểu web rạp
 - Khởi động local bằng **file `.bat`**, không Docker Compose
 - Thanh toán **giả lập** (tiền mặt POS / `ONLINE_MOCK`)
 - Upload poster phim vào thư mục `uploads/` (SOS07)
@@ -108,6 +99,10 @@ Ghế, suất, trạng thái giữ/bán nằm ở **module booking**. Hai kênh 
 ## Tài khoản
 
 Xem bảng ở đầu README. Tóm tắt: `admin` / `193850091011`, `NhanVien` / `NhanVien123`, `customer1` / `customer123`.
+
+## Test API (Postman)
+
+Import `postman/CineVe.postman_collection.json` và `postman/CineVe.local.postman_environment.json`. Hướng dẫn chạy và checklist ảnh: [docs/06-postman.md](docs/06-postman.md).
 
 ## Việc sinh viên phải điền khi tạo project
 

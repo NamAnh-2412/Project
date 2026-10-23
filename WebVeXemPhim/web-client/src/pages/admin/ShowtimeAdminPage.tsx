@@ -11,6 +11,8 @@ import {
   updateShowtime,
 } from "../../api/catalogApi";
 import type { Room, Showtime } from "../../api/types";
+import { formatVnd } from "../../lib/money";
+import { notifyError, notifyOk } from "../../lib/notify";
 
 function isActive(r: Room) {
   return !r.status || r.status === "ACTIVE";
@@ -53,10 +55,6 @@ function isPast(startAt: string) {
   return new Date(startAt).getTime() <= Date.now();
 }
 
-function vnd(n: number) {
-  return `${Number(n).toLocaleString("vi-VN")}đ`;
-}
-
 function apiMessage(e: unknown, fallback: string) {
   const res = (e as { response?: { status?: number; data?: { message?: string } } }).response;
   if (res?.data?.message) return res.data.message;
@@ -81,6 +79,8 @@ export default function ShowtimeAdminPage() {
   const [vipRowCount, setVipRowCount] = useState(2);
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [renameName, setRenameName] = useState("");
+  const [movieFilter, setMovieFilter] = useState("");
+  const [filterRoomId, setFilterRoomId] = useState<number | "ALL">("ALL");
 
   const moviesQ = useQuery({
     queryKey: ["admin-showing-movies"],
@@ -117,15 +117,29 @@ export default function ShowtimeAdminPage() {
   const endPreview = movie ? expectedEnd(startAt, movie.durationMinutes) : "—";
 
   const bookedSeats = shows.reduce((sum, s) => sum + (s.booked ?? 0), 0);
+
+  const filteredShows = useMemo(() => {
+    return shows.filter((s) => {
+      const okMovie = !movieFilter.trim() || s.movieTitle.toLowerCase().includes(movieFilter.toLowerCase().trim());
+      const okRoom = filterRoomId === "ALL" || s.roomId === filterRoomId;
+      return okMovie && okRoom;
+    });
+  }, [shows, movieFilter, filterRoomId]);
+
   const byRoom = useMemo(() => {
     const map = new Map<number, Showtime[]>();
-    for (const s of shows) {
+    for (const s of filteredShows) {
       const list = map.get(s.roomId) ?? [];
       list.push(s);
       map.set(s.roomId, list);
     }
     return map;
-  }, [shows]);
+  }, [filteredShows]);
+
+  const visibleRooms = useMemo(() => {
+    if (filterRoomId === "ALL") return rooms;
+    return rooms.filter((r) => r.id === filterRoomId);
+  }, [rooms, filterRoomId]);
 
   const resetForm = () => {
     setEditingId(null);
@@ -161,8 +175,13 @@ export default function ShowtimeAdminPage() {
       setErr("");
       resetForm();
       qc.invalidateQueries({ queryKey: ["admin-showtimes"] });
+      notifyOk("Đã lưu suất chiếu");
     },
-    onError: (e: unknown) => setErr(apiMessage(e, "Không lưu được suất")),
+    onError: (e: unknown) => {
+      const msg = apiMessage(e, "Không lưu được suất");
+      setErr(msg);
+      notifyError(e, msg);
+    },
   });
 
   const roomPatchMut = useMutation({
@@ -188,18 +207,28 @@ export default function ShowtimeAdminPage() {
       setRoomName("");
       setRoomId(room.id);
       qc.invalidateQueries({ queryKey: ["rooms"] });
+      notifyOk("Đã tạo phòng");
     },
-    onError: (e: unknown) => setErr(apiMessage(e, "Không tạo được phòng")),
+    onError: (e: unknown) => {
+      const msg = apiMessage(e, "Không tạo được phòng");
+      setErr(msg);
+      notifyError(e, msg);
+    },
   });
 
   const cancelMut = useMutation({
     mutationFn: (id: number) => cancelShowtime(id),
     onSuccess: (_, id) => {
       setErr("");
+      notifyOk("Đã hủy suất");
       if (editingId === id) resetForm();
       qc.invalidateQueries({ queryKey: ["admin-showtimes"] });
     },
-    onError: (e: unknown) => setErr(apiMessage(e, "Không hủy được suất")),
+    onError: (e: unknown) => {
+      const msg = apiMessage(e, "Không hủy được suất");
+      setErr(msg);
+      notifyError(e, msg);
+    },
   });
 
   return (
@@ -374,8 +403,57 @@ export default function ShowtimeAdminPage() {
         </div>
       </form>
 
+      {/* Quick filter bar for showtimes */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[220px] flex-1">
+          <input
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
+            placeholder="Lọc theo tên phim..."
+            value={movieFilter}
+            onChange={(e) => setMovieFilter(e.target.value)}
+          />
+          {movieFilter && (
+            <button
+              type="button"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400 hover:text-white"
+              onClick={() => setMovieFilter("")}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-1 rounded-lg border border-zinc-800 bg-zinc-900/80 p-1">
+          <button
+            type="button"
+            className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${
+              filterRoomId === "ALL"
+                ? "bg-yellow-400 text-zinc-900 shadow-sm"
+                : "text-zinc-400 hover:text-white"
+            }`}
+            onClick={() => setFilterRoomId("ALL")}
+          >
+            Tất cả phòng ({rooms.length})
+          </button>
+          {rooms.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${
+                filterRoomId === r.id
+                  ? "bg-yellow-400 text-zinc-900 shadow-sm"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+              onClick={() => setFilterRoomId(r.id)}
+            >
+              {r.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
-        {rooms.map((room) => {
+        {visibleRooms.map((room) => {
           const list = byRoom.get(room.id) ?? [];
           const on = isActive(room);
           return (
@@ -484,7 +562,7 @@ export default function ShowtimeAdminPage() {
                           </div>
                           <div className={`font-semibold ${past ? "text-zinc-500" : "text-zinc-100"}`}>{s.movieTitle}</div>
                           <div className="mt-1 text-xs text-zinc-500">
-                            {vnd(s.basePrice)} · giữ {s.hold ?? 0} / bán {s.booked ?? 0} / {cap} ghế
+                            {formatVnd(s.basePrice)} · giữ {s.hold ?? 0} / bán {s.booked ?? 0} / {cap} ghế
                             {past ? " · đã bắt đầu" : ""}
                             {sold ? " · đã bán vé" : ""}
                             {holding ? " · đang giữ ghế" : ""}

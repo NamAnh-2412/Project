@@ -89,7 +89,7 @@ public class ReportService {
         List<PaidOrder> out = new ArrayList<>();
         for (Reservation r : reservations) {
             Payment p = byRes.get(r.getId());
-            if (p == null || p.getPaidAt() == null) {
+            if (p == null || p.getPaidAt() == null || "REFUNDED".equals(r.getStatus())) {
                 continue;
             }
             r.getSeats().size();

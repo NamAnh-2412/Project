@@ -1,12 +1,16 @@
 package btl.vexemphim.catalog.entity;
 
 import jakarta.persistence.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "showtimes")
+@EntityListeners(AuditingEntityListener.class)
 public class Showtime {
 
     @Id
@@ -32,6 +36,14 @@ public class Showtime {
 
     @Column(length = 16)
     private String status = "SCHEDULED";
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

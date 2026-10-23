@@ -38,7 +38,8 @@ public class MovieService {
         String gname = m.getGenre() == null ? null : m.getGenre().getName();
         return new MovieResponse(m.getId(), m.getTitle(), m.getDurationMinutes(), m.getRated(),
                 m.getPosterUrl(), gid, gname, m.getStatus(),
-                m.getTrailerUrl(), m.getDirector(), m.getCastNames(), m.getReleaseDate());
+                m.getTrailerUrl(), m.getDirector(), m.getCastNames(), m.getReleaseDate(),
+                m.getRatingAverage(), m.getRatingCount());
     }
 
     public Page<MovieResponse> search(String name, Long genreId, String status, Pageable pageable) {
@@ -79,7 +80,8 @@ public class MovieService {
         String gname = m.getGenre() == null ? null : m.getGenre().getName();
         return new MovieDetailResponse(m.getId(), m.getTitle(), m.getDurationMinutes(), m.getRated(),
                 m.getDescription(), m.getPosterUrl(), gid, gname, m.getStatus(),
-                m.getTrailerUrl(), m.getDirector(), m.getCastNames(), m.getReleaseDate());
+                m.getTrailerUrl(), m.getDirector(), m.getCastNames(), m.getReleaseDate(),
+                m.getRatingAverage(), m.getRatingCount());
     }
 
     public Movie get(Long id) {

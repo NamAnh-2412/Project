@@ -35,10 +35,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers("/api/payments/webhook", "/api/payments/momo/ipn",
+                                "/api/payments/momo/return", "/ws-cineve", "/ws-cineve/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/movies/**", "/api/genres/**",
                                 "/api/showtimes/**", "/api/rooms/**", "/api/concessions/**",
                                 "/api/settings/**").permitAll()
-                        .requestMatchers("/uploads/**", "/actuator/health", "/h2-console/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/movies/*/reviews").authenticated()
+                        .requestMatchers("/uploads/**", "/actuator/health", "/h2-console/**",
+                                "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated())
                 .headers(h -> h.frameOptions(f -> f.sameOrigin()))
                 .exceptionHandling(ex -> ex

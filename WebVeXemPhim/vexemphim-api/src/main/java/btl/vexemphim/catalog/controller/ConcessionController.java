@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -36,5 +37,11 @@ public class ConcessionController {
     @PreAuthorize("hasRole('ADMIN')")
     public ConcessionResponse update(@PathVariable Long id, @Valid @RequestBody ConcessionRequest req) {
         return concessionService.update(id, req);
+    }
+
+    @PostMapping("/{id}/image")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ConcessionResponse image(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        return concessionService.uploadImage(id, file);
     }
 }

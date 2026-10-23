@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchSettings, updateCinemaName, uploadCinemaImage, uploadCinemaLogo } from "../../api/catalogApi";
 import { assetUrl } from "../../lib/assetUrl";
 import ThemeToggle from "../../components/ThemeToggle";
+import { errorText } from "../../lib/notify";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -28,8 +29,7 @@ export default function SettingsAdminPage() {
       qc.setQueryData(["settings"], data);
     },
     onError: (e: unknown) => {
-      const msg = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-      setErr(msg || (e instanceof Error ? e.message : "Không lưu được tên rạp"));
+      setErr(errorText(e, e instanceof Error ? e.message : "Không lưu được tên rạp"));
     },
   });
 
@@ -47,8 +47,7 @@ export default function SettingsAdminPage() {
       const data = kind === "logo" ? await uploadCinemaLogo(file) : await uploadCinemaImage(file);
       qc.setQueryData(["settings"], data);
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-      setErr(msg || "Không tải được ảnh");
+      setErr(errorText(e, "Không tải được ảnh"));
     }
   };
 

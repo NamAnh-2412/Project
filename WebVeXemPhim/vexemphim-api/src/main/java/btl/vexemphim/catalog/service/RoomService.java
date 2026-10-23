@@ -13,7 +13,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class RoomService {
@@ -59,8 +63,59 @@ public class RoomService {
                 room.getSeats().add(seat);
             }
         }
-        roomRepository.save(room);
+        roomRepository.saveAndFlush(room);
+        if (pairLastStandardRow(room.getSeats())) {
+            seatRepository.saveAll(room.getSeats());
+        }
         return toResponse(room);
+    }
+
+    /** Hàng STANDARD cuối cùng thành ghế đôi. Hàng VIP giữ nguyên. */
+    @Transactional
+    public void pairRoomsWithoutCouples() {
+        for (Room room : roomRepository.findAll()) {
+            List<Seat> seats = seatRepository.findByRoom_IdOrderByRowLabelAscNumberAsc(room.getId());
+            boolean hasCouple = seats.stream().anyMatch(s -> "COUPLE".equalsIgnoreCase(s.getType()));
+            if (hasCouple) {
+                continue;
+            }
+            if (pairLastStandardRow(seats)) {
+                seatRepository.saveAll(seats);
+            }
+        }
+    }
+
+    private static boolean pairLastStandardRow(List<Seat> seats) {
+        Map<String, List<Seat>> byRow = new LinkedHashMap<>();
+        for (Seat seat : seats) {
+            byRow.computeIfAbsent(seat.getRowLabel(), key -> new ArrayList<>()).add(seat);
+        }
+        String chosen = null;
+        for (Map.Entry<String, List<Seat>> entry : byRow.entrySet()) {
+            boolean allStandard = entry.getValue().stream().allMatch(s -> "STANDARD".equalsIgnoreCase(s.getType()));
+            if (allStandard && entry.getValue().size() >= 2) {
+                chosen = entry.getKey();
+            }
+        }
+        if (chosen == null) {
+            return false;
+        }
+        List<Seat> row = byRow.get(chosen);
+        row.sort(Comparator.comparingInt(Seat::getNumber));
+        boolean changed = false;
+        for (int i = 0; i + 1 < row.size(); i += 2) {
+            Seat left = row.get(i);
+            Seat right = row.get(i + 1);
+            if (left.getId() == null || right.getId() == null || left.getNumber() + 1 != right.getNumber()) {
+                continue;
+            }
+            left.setType("COUPLE");
+            right.setType("COUPLE");
+            left.setPairSeatId(right.getId());
+            right.setPairSeatId(left.getId());
+            changed = true;
+        }
+        return changed;
     }
 
     @Transactional

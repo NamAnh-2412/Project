@@ -3,14 +3,10 @@ import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { fetchMovie, fetchShowtimes } from "../../api/catalogApi";
 import type { Movie, Showtime } from "../../api/types";
 import BookingStepper from "../../components/BookingStepper";
-
-function pad(n: number) {
-  return String(n).padStart(2, "0");
-}
+import DateStrip, { isoDate, showBand } from "../../components/DateStrip";
 
 function today() {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return isoDate();
 }
 
 function hm(iso: unknown) {
@@ -97,12 +93,15 @@ export default function PosShowtimesPage({ movieId: movieIdProp }: { movieId?: n
       <p className="muted"><Link to="/pos">← Phim</Link></p>
       <h1>{movie?.title ?? "Suất chiếu"}</h1>
       {err && <div className="toast err">{err}</div>}
-      <div className="field" style={{ maxWidth: 220 }}>
-        <label>Ngày</label>
-        <input type="date" min={today()} value={date} onChange={(e) => setDate(e.target.value)} />
-      </div>
+      <DateStrip value={date} onChange={setDate} />
       {shows.length === 0 && <p className="muted">Không còn suất ngày này. Chọn ngày khác — hệ thống không tự chuyển ngày.</p>}
-      {shows.map((s) => {
+      {["Sáng & trưa", "Chiều", "Tối & đêm"].map((band) => {
+        const rows = shows.filter((s) => showBand(s.startAt) === band);
+        if (rows.length === 0) return null;
+        return (
+          <div className="show-band" key={band}>
+            <h3>{band}</h3>
+            {rows.map((s) => {
         const live = started(s.startAt);
         const occ = occupancyOf(s);
         const body = (
@@ -127,6 +126,9 @@ export default function PosShowtimesPage({ movieId: movieIdProp }: { movieId?: n
           <Link key={s.id} to={`/pos/book/${s.id}`} className="panel" style={{ display: "block", marginBottom: 12 }}>
             {body}
           </Link>
+        );
+            })}
+          </div>
         );
       })}
     </div>

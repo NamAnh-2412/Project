@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Toaster } from "sonner";
 import Navbar from "./components/Navbar";
 import GalaxySky from "./components/GalaxySky";
 import AdminLayout from "./components/AdminLayout";
@@ -24,9 +25,13 @@ import MovieAdminPage from "./pages/admin/MovieAdminPage";
 import ShowtimeAdminPage from "./pages/admin/ShowtimeAdminPage";
 import ConcessionAdminPage from "./pages/admin/ConcessionAdminPage";
 import ReportAdminPage from "./pages/admin/ReportAdminPage";
+import VoucherAdminPage from "./pages/admin/VoucherAdminPage";
 import ConcessionPage from "./pages/ConcessionPage";
 import { PosMovieRedirect } from "./pages/pos/PosShowtimesPage";
 import PosRevenuePage from "./pages/pos/PosRevenuePage";
+import NoticesPage from "./pages/NoticesPage";
+import UserAdminPage from "./pages/admin/UserAdminPage";
+import PosShiftPage from "./pages/pos/PosShiftPage";
 
 function Shell() {
   const loc = useLocation();
@@ -75,7 +80,9 @@ function Shell() {
         />
         <Route path="/pos/print/:reservationId" element={<Protected roles={["CASHIER"]}><PosPrintPage /></Protected>} />
         <Route path="/pos/tickets" element={<Protected roles={["CASHIER"]}><PosScanPage /></Protected>} />
+        <Route path="/pos/notices" element={<Protected roles={["CASHIER"]}><NoticesPage heading="Thông báo quầy" /></Protected>} />
         <Route path="/pos/revenue" element={<Protected roles={["CASHIER"]}><PosRevenuePage /></Protected>} />
+        <Route path="/pos/shift" element={<Protected roles={["CASHIER"]}><PosShiftPage /></Protected>} />
         <Route path="/admin" element={<Protected roles={["ADMIN"]}><AdminLayout /></Protected>}>
           <Route index element={<Navigate to="movies" replace />} />
           <Route path="movies" element={<MovieAdminPage />} />
@@ -83,6 +90,9 @@ function Shell() {
           <Route path="showtimes" element={<ShowtimeAdminPage />} />
           <Route path="concessions" element={<ConcessionAdminPage />} />
           <Route path="reports" element={<ReportAdminPage />} />
+          <Route path="vouchers" element={<VoucherAdminPage />} />
+          <Route path="users" element={<UserAdminPage />} />
+          <Route path="notices" element={<NoticesPage heading="Thông báo" />} />
           <Route path="settings" element={<SettingsAdminPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -99,6 +109,7 @@ function Shell() {
 export default function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" richColors />
       <ThemeProvider>
         <BrandProvider>
           <BrowserRouter>

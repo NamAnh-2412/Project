@@ -1,6 +1,9 @@
 package btl.vexemphim.booking.entity;
 
 import jakarta.persistence.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -8,7 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "reservations")
+@Table(name = "reservations", indexes = {
+        @Index(name = "idx_res_status_expires", columnList = "status, hold_expires_at"),
+        @Index(name = "idx_res_st_cust_status", columnList = "showtime_id, customer_user_id, status"),
+        @Index(name = "idx_res_st_cash_status", columnList = "showtime_id, cashier_user_id, status"),
+        @Index(name = "idx_res_cust_status_created", columnList = "customer_user_id, status, created_at")
+})
+@EntityListeners(AuditingEntityListener.class)
 public class Reservation {
 
     @Id
@@ -39,6 +48,9 @@ public class Reservation {
     @Column(name = "cashier_user_id")
     private Long cashierUserId;
 
+    @Column(name = "shift_id")
+    private Long shiftId;
+
     @Column(name = "guest_name", length = 128)
     private String guestName;
 
@@ -51,8 +63,22 @@ public class Reservation {
     @Column(name = "total_amount", precision = 12, scale = 2)
     private BigDecimal totalAmount;
 
-    @Column(name = "created_at")
+    @Column(name = "voucher_id")
+    private Long voucherId;
+
+    @Column(name = "voucher_code", length = 32)
+    private String voucherCode;
+
+    @Column(name = "discount_amount", precision = 12, scale = 2)
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReservationSeat> seats = new ArrayList<>();
@@ -81,6 +107,8 @@ public class Reservation {
     public void setCustomerUserId(Long customerUserId) { this.customerUserId = customerUserId; }
     public Long getCashierUserId() { return cashierUserId; }
     public void setCashierUserId(Long cashierUserId) { this.cashierUserId = cashierUserId; }
+    public Long getShiftId() { return shiftId; }
+    public void setShiftId(Long shiftId) { this.shiftId = shiftId; }
     public String getGuestName() { return guestName; }
     public void setGuestName(String guestName) { this.guestName = guestName; }
     public String getStatus() { return status; }
@@ -89,6 +117,12 @@ public class Reservation {
     public void setHoldExpiresAt(LocalDateTime holdExpiresAt) { this.holdExpiresAt = holdExpiresAt; }
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+    public Long getVoucherId() { return voucherId; }
+    public void setVoucherId(Long voucherId) { this.voucherId = voucherId; }
+    public String getVoucherCode() { return voucherCode; }
+    public void setVoucherCode(String voucherCode) { this.voucherCode = voucherCode; }
+    public BigDecimal getDiscountAmount() { return discountAmount; }
+    public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public List<ReservationSeat> getSeats() { return seats; }
