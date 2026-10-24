@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Lịch hẹn của tôi{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Lịch xem phòng</h1>
+    {% for item in lich %}
+    <div class="info-box" style="background:#fff;padding:12px;margin-bottom:10px;border-radius:8px;">
+        <strong>{{ item.tieu_de }}</strong>
+        <p>{{ item.dia_chi }}</p>
+        <p>{{ item.thoi_gian_hen }} — {{ item.trang_thai }}</p>
+        {% if item.ghi_chu %}<p>{{ item.ghi_chu }}</p>{% endif %}
+    </div>
+    {% else %}
+    <p>Bạn chưa đặt lịch xem phòng.</p>
+    {% endfor %}
+</div>
+{% endblock %}

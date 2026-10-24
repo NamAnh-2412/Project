@@ -3,6 +3,16 @@
 
 {% block content %}
 <div class="container">
+    {% if banners %}
+    <div class="dai-banner">
+        {% for b in banners %}
+        <a class="the-banner" href="{{ b.lien_ket or url_for('main.index') }}">
+            {% if b.anh %}<img src="{{ image_url(b.anh) }}" alt="{{ b.tieu_de }}">{% endif %}
+            <strong>{{ b.tieu_de }}</strong>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
     <h1>Danh sách phòng trọ</h1>
 
     <div class="rooms-layout">
@@ -17,7 +27,7 @@
 
                 <form method="GET" action="" class="filter-form">
                     <div class="filter-block">
-                        <label class="filter-block-title">🔍 Tìm kiếm</label>
+                        <label class="filter-block-title"><i class="fa-solid fa-magnifying-glass"></i> Tìm kiếm</label>
                         <input type="text" name="search" placeholder="Tên phòng, mô tả..." value="{{ search_query }}" class="filter-input">
                     </div>
 
@@ -40,7 +50,7 @@
                     </div>
 
                     <div class="filter-block">
-                        <label class="filter-block-title">📐 Diện tích (m²)</label>
+                        <label class="filter-block-title"><i class="fa-solid fa-ruler-combined"></i> Diện tích (m²)</label>
                         <div class="filter-range">
                             <input type="number" name="dien_tich_min" placeholder="Từ" value="{{ dien_tich_min }}" step="0.01" min="0" class="filter-input">
                             <span class="range-separator">-</span>
@@ -49,7 +59,7 @@
                     </div>
 
                     <div class="filter-block">
-                        <label class="filter-block-title">💰 Giá tiền (đồng/tháng)</label>
+                        <label class="filter-block-title"><i class="fa-solid fa-coins"></i> Giá tiền (đồng/tháng)</label>
                         <div class="filter-range">
                             <input type="number" name="gia_min" placeholder="Từ" value="{{ gia_min }}" step="1000" min="0" class="filter-input">
                             <span class="range-separator">-</span>
@@ -58,8 +68,37 @@
                     </div>
 
                     <div class="filter-block">
-                        <label class="filter-block-title">📍 Địa chỉ / Quận-Huyện</label>
+                        <label class="filter-block-title"><i class="fa-solid fa-location-dot"></i> Địa chỉ / Quận-Huyện</label>
                         <input type="text" name="dia_chi" placeholder="Ví dụ: Hoàng Mai, Hà Nội..." value="{{ dia_chi_filter }}" class="filter-input">
+                    </div>
+
+                    <div class="filter-block">
+                        <label class="filter-block-title">Loại phòng</label>
+                        <select name="loai_phong" class="filter-input">
+                            <option value="">Tất cả</option>
+                            {% for ma, ten in loai_phong_ds.items() %}
+                            <option value="{{ ma }}" {% if loai_phong == ma %}selected{% endif %}>{{ ten }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-block">
+                        <label class="filter-block-title">Sắp xếp</label>
+                        <select name="sap_xep" class="filter-input">
+                            <option value="moi_nhat" {% if sap_xep == 'moi_nhat' %}selected{% endif %}>Mới nhất</option>
+                            <option value="gia_tang" {% if sap_xep == 'gia_tang' %}selected{% endif %}>Giá thấp đến cao</option>
+                            <option value="gia_giam" {% if sap_xep == 'gia_giam' %}selected{% endif %}>Giá cao đến thấp</option>
+                            <option value="dien_tich_lon" {% if sap_xep == 'dien_tich_lon' %}selected{% endif %}>Diện tích lớn</option>
+                            <option value="dien_tich_nho" {% if sap_xep == 'dien_tich_nho' %}selected{% endif %}>Diện tích nhỏ</option>
+                        </select>
+                    </div>
+                    <div class="filter-block">
+                        <label class="filter-block-title">Tiện ích (phải có đủ)</label>
+                        {% for ti in tien_ich_list %}
+                        <label class="filter-option">
+                            <input type="checkbox" name="tien_ich" value="{{ ti.id }}" {% if ti.id in tien_ich_chon %}checked{% endif %}>
+                            <span>{{ ti.icon or '' }} {{ ti.ten }}</span>
+                        </label>
+                        {% endfor %}
                     </div>
 
                     <button type="submit" class="btn-filter-submit">Áp dụng bộ lọc</button>
@@ -68,34 +107,21 @@
         </aside>
 
         <main class="rooms-content">
+            <div class="day-chip">
+                {% for chip in chip_loai %}
+                <a class="chip {% if chip.chon %}chon{% endif %}" href="{{ chip.href }}">{{ chip.ten }}</a>
+                {% endfor %}
+            </div>
             <div class="rooms-grid">
                 {% if not rooms %}
-                <p class="no-results">Không tìm thấy phòng nào.</p>
+                <p class="no-results khoi-trong">Không tìm thấy phòng nào.</p>
                 {% else %}
                 {% for room in rooms %}
-                {% set main_image = room.anh_chinh or room.anh_dau_tien or 'images/no-image.jpg' %}
-                {% set is_favorite = room.id in favorite_rooms %}
-                {% set is_own_room = is_logged_in() and not is_admin() and session.get('user_id') == room.nguoi_dung_id %}
-                <div class="room-card">
-                    <div class="room-image">
-                        <img src="{{ image_url(main_image) }}" alt="{{ room.tieu_de }}" onerror="this.src='{{ url_for('static', filename='images/no-image.svg') }}'">
-                        <span class="room-status status-{{ room.trang_thai }}">{{ get_trang_thai_phong_text(room.trang_thai) }}</span>
-                        {% if is_logged_in() and not is_own_room and not is_chu_nha() and not is_admin() %}
-                        <button class="favorite-btn {{ 'active' if is_favorite else '' }}" onclick="toggleFavorite({{ room.id }}, this)" title="{{ 'Bỏ yêu thích' if is_favorite else 'Yêu thích' }}">❤️</button>
-                        {% endif %}
-                    </div>
-                    <div class="room-info">
-                        <h3>{{ room.tieu_de }}</h3>
-                        <p class="room-price">{{ "{:,.0f}".format(room.gia) }} đ/tháng</p>
-                        <p class="room-address">📍 {{ room.dia_chi }}</p>
-                        {% if room.quan_huyen %}<p class="room-district">🏘️ {{ room.quan_huyen }}</p>{% endif %}
-                        {% if room.dien_tich %}<p class="room-area">📐 Diện tích: {{ room.dien_tich }} m²</p>{% endif %}
-                        <a href="{{ url_for('rooms.room_detail', room_id=room.id) }}" class="btn btn-primary">Xem chi tiết</a>
-                    </div>
-                </div>
+                {% include 'includes/the_phong.html' %}
                 {% endfor %}
                 {% endif %}
             </div>
+            {% include 'includes/phan_trang.html' %}
         </main>
     </div>
 </div>

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Lịch hẹn{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Lịch hẹn xem phòng</h1>
+    {% for item in lich %}
+    <div style="background:#fff;padding:12px;margin-bottom:12px;border-radius:8px;">
+        <strong>{{ item.ho_ten }}</strong> — {{ item.tieu_de }}
+        <p>{{ item.thoi_gian_hen }} — {{ item.trang_thai }}</p>
+        <p>{{ item.email }} {% if item.so_dien_thoai %}· {{ item.so_dien_thoai }}{% endif %}</p>
+        {% if item.ghi_chu %}<p>{{ item.ghi_chu }}</p>{% endif %}
+        <form method="POST" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="lich_id" value="{{ item.id }}">
+            <button class="btn btn-success" name="action" value="chap_nhan">Nhận</button>
+            <button class="btn btn-danger" name="action" value="tu_choi">Từ chối</button>
+            <button class="btn btn-secondary" name="action" value="hoan_thanh">Đã xem</button>
+            <input type="datetime-local" name="gio_moi">
+            <button class="btn btn-primary" name="action" value="doi_gio">Đổi giờ</button>
+        </form>
+    </div>
+    {% else %}
+    <p>Chưa có lịch hẹn.</p>
+    {% endfor %}
+</div>
+{% endblock %}

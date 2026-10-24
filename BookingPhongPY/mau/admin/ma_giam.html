@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Mã giảm{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Mã giảm</h1>
+    <p>Mã chỉ trừ tiền thuê tháng đầu. Tiền cọc giữ nguyên.</p>
+    <form method="POST" class="booking-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-row">
+            <div class="form-group"><label>Mã</label><input name="ma" required></div>
+            <div class="form-group">
+                <label>Loại</label>
+                <select name="loai">
+                    <option value="phan_tram">Phần trăm</option>
+                    <option value="so_tien">Số tiền</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Giá trị</label><input name="gia_tri" required></div>
+            <div class="form-group"><label>Trần giảm</label><input name="tran_giam"></div>
+            <div class="form-group"><label>Hết hạn</label><input type="date" name="het_han"></div>
+            <div class="form-group"><label>Số lần tối đa</label><input type="number" name="so_lan_toi_da" min="1"></div>
+        </div>
+        <button class="btn btn-primary" type="submit">Lưu mã</button>
+    </form>
+    {% if not ds %}<p class="khoi-trong">Chưa có mã.</p>{% endif %}
+    <ul>
+    {% for m in ds %}
+        <li><span class="nhan-trang-thai cho">{{ m.ma }}</span> {{ m.loai }} {{ m.gia_tri }} — đã dùng {{ m.so_lan_da_dung }}/{{ m.so_lan_toi_da or '∞' }}</li>
+    {% endfor %}
+    </ul>
+</div>
+{% endblock %}

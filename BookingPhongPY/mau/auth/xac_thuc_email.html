@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Xác thực email{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Xác thực email</h1>
+    {% if user and user.email_da_xac_thuc %}
+    <div class="khoi-trong">
+        <p>Email đã được xác thực. Bạn có thể đặt phòng và đánh giá.</p>
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary">Về trang chủ</a>
+    </div>
+    {% else %}
+    <p>Tài khoản <strong>{{ user.email if user else '' }}</strong> chưa xác thực. Mở thư Gmail (kể cả mục Spam) và bấm liên kết. Liên kết có hiệu lực 24 giờ.</p>
+    {% if da_gui %}
+    <div class="alert alert-success">Đã gửi thư xác thực tới {{ user.email }}.</div>
+    {% elif loi_gui %}
+    <div class="alert alert-error">{{ loi_gui }}</div>
+    {% endif %}
+    {% if not smtp_san_sang %}
+    <p>Để thư tới Gmail thật, điền trong file <code>.env</code> rồi lưu lại:</p>
+    <ul>
+        <li><code>SMTP_HOST=smtp.gmail.com</code></li>
+        <li><code>SMTP_USER</code> là địa chỉ Gmail gửi thư</li>
+        <li><code>SMTP_PASSWORD</code> là mật khẩu ứng dụng 16 ký tự</li>
+        <li><code>SMTP_FROM</code> cùng địa chỉ với <code>SMTP_USER</code></li>
+    </ul>
+    {% endif %}
+    {% if link_dev %}
+    <div class="alert alert-success">Chưa gửi được qua Gmail nên liên kết hiện tại đây: <a href="{{ link_dev }}">Xác thực ngay</a></div>
+    {% endif %}
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-primary" type="submit">Gửi lại email</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

@@ -7,7 +7,8 @@
 
     {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
 
-    <form method="POST" action="">
+    <form method="POST" action="" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label>Tiêu đề phòng *</label>
             <input type="text" name="tieu_de" required value="{{ phong.tieu_de }}">
@@ -30,6 +31,25 @@
                 <input type="number" name="dien_tich" min="0" step="0.1" value="{{ phong.dien_tich or '' }}">
             </div>
             <div class="form-group">
+                <label>Loại phòng</label>
+                <select name="loai_phong">
+                    {% for ma, ten in loai_phong_ds.items() %}
+                    <option value="{{ ma }}" {% if phong.loai_phong == ma %}selected{% endif %}>{{ ten }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Tiền điện (đ/số)</label><input type="number" name="tien_dien" min="0" value="{{ phong.tien_dien or 0 }}"></div>
+                <div class="form-group"><label>Tiền nước (đ/số)</label><input type="number" name="tien_nuoc" min="0" value="{{ phong.tien_nuoc or 0 }}"></div>
+                <div class="form-group"><label>Tiền dịch vụ</label><input type="number" name="tien_dich_vu" min="0" value="{{ phong.tien_dich_vu or 0 }}"></div>
+                <div class="form-group"><label>Tiền cọc</label><input type="number" name="tien_coc" min="0" value="{{ phong.tien_coc or 0 }}"></div>
+            </div>
+            <input type="hidden" name="vi_do" value="{{ phong.vi_do or '' }}">
+            <input type="hidden" name="kinh_do" value="{{ phong.kinh_do or '' }}">
+            <div class="form-group">
+                <label><input type="checkbox" name="an_tin" value="1" {% if phong.an_tin %}checked{% endif %}> Tạm ẩn tin</label>
+            </div>
+            <div class="form-group">
                 <label>Trạng thái</label>
                 <select name="trang_thai">
                     <option value="con_trong" {% if phong.trang_thai == 'con_trong' %}selected{% endif %}>Còn trống</option>
@@ -40,6 +60,20 @@
         <div class="form-group">
             <label>Mô tả</label>
             <textarea name="mo_ta" rows="5">{{ phong.mo_ta or '' }}</textarea>
+        </div>
+        <div class="form-group">
+            <label>Ảnh hiện có</label>
+            {% for image in current_images %}
+            <div class="anh-sua">
+                <img src="{{ image_url(image.duong_dan_anh) }}" alt="" width="120">
+                <label><input type="radio" name="anh_chinh" value="{{ image.id }}" {% if image.la_anh_chinh %}checked{% endif %}> Ảnh chính</label>
+                <label><input type="checkbox" name="xoa_anh" value="{{ image.id }}"> Xóa</label>
+            </div>
+            {% else %}
+            <p>Chưa có ảnh.</p>
+            {% endfor %}
+            <label>Thêm ảnh mới</label>
+            <input type="file" name="images_upload" multiple accept="image/*">
         </div>
         <div class="form-group">
             <label>Tiện ích</label>

@@ -1,0 +1,91 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: bookingphong
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bookingphong"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+
+  web:
+    build: .
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?Dat SECRET_KEY dai va ngau nhien trong .env}
+      FLASK_ENV: production
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: bookingphong
+      DB_POOL_MAX: ${DB_POOL_MAX:-8}
+      WEB_WORKERS: ${WEB_WORKERS:-3}
+      WEB_THREADS: ${WEB_THREADS:-2}
+      RATELIMIT_STORAGE_URI: redis://redis:6379/0
+      BEHIND_PROXY: "1"
+      COOKIE_SECURE: ${COOKIE_SECURE:-0}
+      BANK_BIN: ${BANK_BIN:-970422}
+      BANK_ACCOUNT: ${BANK_ACCOUNT:-}
+      BANK_ACCOUNT_NAME: ${BANK_ACCOUNT_NAME:-CHU TRO}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GIU_CHO_GIO: ${GIU_CHO_GIO:-24}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./uploads:/app/uploads
+
+  lich:
+    build: .
+    command: ["sh", "-c", "python kich_ban/migrate.py && python kich_ban/chay_lich.py"]
+    environment:
+      FLASK_ENV: production
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: bookingphong
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./tinh:/var/www/tinh:ro
+      - ./uploads:/var/www/uploads:ro
+    depends_on:
+      - web
+
+volumes:
+  pgdata:

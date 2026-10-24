@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Báo cáo{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Báo cáo vi phạm</h1>
+    {% for b in ds %}
+    <div style="background:#fff;padding:12px;margin-bottom:10px;border-radius:8px;">
+        <strong>#{{ b.id }} {{ b.loai }}</strong> — {{ b.trang_thai }}
+        <p>{{ b.tieu_de or 'Phòng đã xóa' }} · {{ b.ho_ten or 'Ẩn danh' }}</p>
+        <p>{{ b.noi_dung }}</p>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="bao_cao_id" value="{{ b.id }}">
+            <button class="btn btn-secondary" name="trang_thai" value="dang_xu_ly">Đang xử lý</button>
+            <button class="btn btn-success" name="trang_thai" value="da_xu_ly">Đã xử lý</button>
+        </form>
+    </div>
+    {% else %}<p>Chưa có báo cáo.</p>{% endfor %}
+</div>
+{% endblock %}

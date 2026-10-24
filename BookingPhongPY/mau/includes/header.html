@@ -29,24 +29,34 @@
             <nav class="nav">
                 <a href="{{ url_for('main.index') }}" class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}">Trang chủ</a>
                 {% if is_logged_in() %}
+                    <a href="{{ url_for('tuong_tac.thong_bao') }}" class="nav-link">Thông báo{% if so_thong_bao() %} ({{ so_thong_bao() }}){% endif %}</a>
                     {% if is_admin() %}
                     <a href="{{ url_for('admin.dashboard') }}" class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">Quản lý tổng</a>
-                    <a href="{{ url_for('admin.manage_phong') }}" class="nav-link">Quản lý phòng</a>
-                    <a href="{{ url_for('admin.manage_chu_nha') }}" class="nav-link">Quản lý chủ nhà</a>
-                    <a href="{{ url_for('admin.manage_nguoi_thue') }}" class="nav-link">Quản lý người thuê</a>
+                    <a href="{{ url_for('admin_ext.duyet_tin') }}" class="nav-link">Duyệt tin{% if so_cho_duyet() %} ({{ so_cho_duyet() }}){% endif %}</a>
+                    <a href="{{ url_for('admin_ext.bao_cao') }}" class="nav-link">Báo cáo</a>
+                    <a href="{{ url_for('admin.manage_phong') }}" class="nav-link">Phòng</a>
                     {% elif is_chu_nha() %}
-                    <a href="{{ url_for('admin.manage_rooms') }}" class="nav-link btn btn-primary {% if request.endpoint in ['admin.manage_rooms', 'admin.edit_room'] %}active{% endif %}" style="padding: 5px 15px; font-size: 14px;">+ Đăng phòng</a>
-                    <a href="{{ url_for('admin.chu_nha_bookings') }}" class="nav-link {% if request.endpoint == 'admin.chu_nha_bookings' %}active{% endif %}">Đơn đặt phòng</a>
-                    <a href="{{ url_for('admin.chu_nha_index') }}" class="nav-link {% if request.endpoint == 'admin.chu_nha_index' %}active{% endif %}">Thống kê</a>
+                    <a href="{{ url_for('admin.chu_nha_index') }}" class="nav-link">Thống kê</a>
+                    <a href="{{ url_for('admin.manage_rooms') }}" class="nav-link">Đăng phòng</a>
+                    <a href="{{ url_for('admin.chu_nha_bookings') }}" class="nav-link">Đơn đặt</a>
+                    <a href="{{ url_for('pms.lich_hen') }}" class="nav-link">Lịch hẹn</a>
+                    <a href="{{ url_for('pms.hop_dong') }}" class="nav-link">Hợp đồng</a>
+                    <a href="{{ url_for('pms.hoa_don') }}" class="nav-link">Hóa đơn</a>
+                    <a href="{{ url_for('tuong_tac.chat_ds') }}" class="nav-link">Chat</a>
+                    <a href="{{ url_for('tai_khoan.ho_so') }}" class="nav-link">Hồ sơ</a>
                     {% else %}
-                    <a href="{{ url_for('rooms.my_bookings') }}" class="nav-link {% if request.endpoint == 'rooms.my_bookings' %}active{% endif %}">Đặt phòng của tôi</a>
-                    <a href="{{ url_for('rooms.favorites') }}" class="nav-link {% if request.endpoint == 'rooms.favorites' %}active{% endif %}">Yêu thích</a>
+                    <a href="{{ url_for('rooms.my_bookings') }}" class="nav-link">Đơn của tôi</a>
+                    <a href="{{ url_for('dat_cho.lich_cua_toi') }}" class="nav-link">Lịch xem</a>
+                    <a href="{{ url_for('rooms.favorites') }}" class="nav-link">Yêu thích</a>
+                    <a href="{{ url_for('tuong_tac.chat_ds') }}" class="nav-link">Chat</a>
+                    <a href="{{ url_for('tai_khoan.ho_so') }}" class="nav-link">Hồ sơ</a>
                     {% endif %}
                 {% else %}
                 <a href="{{ url_for('auth.login') }}" class="nav-link {% if request.endpoint == 'auth.login' %}active{% endif %}">Đăng nhập</a>
                 <a href="{{ url_for('auth.register') }}" class="nav-link btn btn-primary {% if request.endpoint == 'auth.register' %}active{% endif %}">Đăng ký</a>
                 {% endif %}
             </nav>
+            <button type="button" class="nut-chu-de" id="nut-chu-de" aria-pressed="false">Tối</button>
         </div>
     </div>
 </header>

@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Chat{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Chat với {{ doi_phuong.ho_ten or doi_phuong.email }}</h1>
+    <p>Phòng: {{ phong.tieu_de }}</p>
+    <div id="khung-chat">
+        {% for t in tin %}
+        <div class="bubble {{ 'toi' if t.nguoi_gui_id == toi else 'khac' }}" data-id="{{ t.id }}" data-the="{{ 1 if t.la_the else 0 }}" data-gia="{{ t.gia_the or phong.gia }}">
+            {% if t.la_the %}
+            <a class="the-phong" href="{{ url_for('rooms.room_detail', room_id=phong.id) }}">
+                <strong>{{ phong.tieu_de }}</strong>
+                <span>{{ "{:,.0f}".format(t.gia_the or phong.gia) }} đ</span>
+            </a>
+            {% else %}{{ t.noi_dung }}{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    <form id="form-the">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-secondary" type="submit">Gửi thẻ phòng</button>
+    </form>
+    <form id="form-chat">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="text" name="noi_dung" id="noi_dung" required placeholder="Nhập tin nhắn">
+        <button class="btn btn-primary" type="submit">Gửi</button>
+    </form>
+</div>
+<script>
+const khung = document.getElementById('khung-chat');
+const token = document.querySelector('meta[name="csrf-token"]').content;
+let sau = 0;
+khung.querySelectorAll('[data-id]').forEach(el => { sau = Math.max(sau, Number(el.dataset.id)); });
+function them(tin) {
+    tin.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'bubble ' + (t.toi_gui ? 'toi' : 'khac');
+        div.dataset.id = t.id;
+        if (t.la_the) {
+            const the = document.createElement('a');
+            the.className = 'the-phong';
+            the.href = '/room/{{ phong.id }}';
+            the.innerHTML = '<strong></strong><span></span>';
+            the.querySelector('strong').textContent = t.tieu_de || '';
+            the.querySelector('span').textContent = Number(t.gia || 0).toLocaleString('vi-VN') + ' đ';
+            div.appendChild(the);
+        } else {
+            div.textContent = t.noi_dung;
+        }
+        khung.appendChild(div);
+        sau = Math.max(sau, t.id);
+    });
+    khung.scrollTop = khung.scrollHeight;
+}
+let cho = 4000;
+async function tai() {
+    if (document.hidden) return;
+    const res = await fetch('/api/tin-nhan?voi={{ doi_phuong_id }}&phong_id={{ phong.id }}&sau=' + sau);
+    const data = await res.json();
+    if (!data.ok) return;
+    if (data.tin.length) {
+        them(data.tin);
+        cho = 4000;
+    } else {
+        cho = Math.min(cho + 2000, 12000);
+    }
+}
+document.getElementById('form-chat').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const noiDung = document.getElementById('noi_dung');
+    const body = new URLSearchParams({ voi: '{{ doi_phuong_id }}', phong_id: '{{ phong.id }}', noi_dung: noiDung.value, csrf_token: token });
+    const res = await fetch('/api/tin-nhan', { method: 'POST', headers: { 'X-CSRFToken': token }, body });
+    const data = await res.json();
+    if (data.ok) { noiDung.value = ''; tai(); }
+    else alert(data.message || 'Không gửi được');
+});
+document.getElementById('form-the').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const body = new URLSearchParams({
+        voi: '{{ doi_phuong_id }}', phong_id: '{{ phong.id }}', noi_dung: {{ phong.tieu_de|tojson }},
+        la_the: '1', dat_phong_id: '{{ dat_phong_id or "" }}', csrf_token: token
+    });
+    const res = await fetch('/api/tin-nhan', { method: 'POST', headers: { 'X-CSRFToken': token }, body });
+    const data = await res.json();
+    if (data.ok) tai();
+});
+function lap() {
+    const doi = document.hidden ? 20000 : cho;
+    setTimeout(async function () {
+        try { await tai(); } catch (e) { cho = Math.min(cho + 2000, 12000); }
+        lap();
+    }, doi);
+}
+document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) { cho = 4000; tai(); }
+});
+lap();
+</script>
+{% endblock %}

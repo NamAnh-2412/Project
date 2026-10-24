@@ -15,7 +15,7 @@
     {% endif %}
 
     {% if not bookings %}
-    <p class="no-results">Bạn chưa có đơn đặt phòng nào.</p>
+    <p class="no-results khoi-trong">Bạn chưa có đơn đặt phòng nào.</p>
     <a href="{{ url_for('main.index') }}" class="btn btn-primary">Tìm phòng ngay</a>
     {% else %}
     <div class="bookings-list">
@@ -31,8 +31,13 @@
                 <p><strong>Địa chỉ:</strong> {{ booking.phong_dia_chi }}</p>
                 <p><strong>Giá:</strong> {{ "{:,.0f}".format(booking.gia) }} đ/tháng</p>
                 <p><strong>Trạng thái:</strong>
-                    <span style="background-color: {{ trang_thai_info.color }}; color: white; padding: 5px 10px; border-radius: 4px;">{{ trang_thai_info.text }}</span>
+                    <span class="nhan-trang-thai {{ booking.trang_thai }}">{{ trang_thai_info.text }}</span>
                 </p>
+                {% if booking.gia_thue_chot %}<p><strong>Giá đã chốt:</strong> {{ "{:,.0f}".format(booking.gia_thue_chot) }} đ/tháng</p>{% endif %}
+                {% if booking.giam_thang_dau %}<p><strong>Giảm tháng đầu:</strong> {{ "{:,.0f}".format(booking.giam_thang_dau) }} đ</p>{% endif %}
+                {% if booking.trang_thai == 'cho_xac_nhan' and booking.het_han_giu %}
+                <p class="han-giu">Giữ chỗ đến {{ booking.het_han_giu.strftime('%H:%M %d/%m/%Y') }}</p>
+                {% endif %}
                 {% if booking.so_dien_thoai_lien_he %}<p><strong>Số điện thoại liên hệ:</strong> {{ booking.so_dien_thoai_lien_he }}</p>{% endif %}
                 {% if booking.tin_nhan %}<p><strong>Tin nhắn:</strong> {{ booking.tin_nhan }}</p>{% endif %}
 
@@ -52,8 +57,15 @@
                 <p><small>Ngày đặt: {{ booking.ngay_tao.strftime('%d/%m/%Y %H:%M') if booking.ngay_tao else '' }}</small></p>
                 <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
                     <a href="{{ url_for('rooms.room_detail', room_id=booking.phong_id) }}" class="btn btn-primary">Xem chi tiết phòng</a>
+                    <a href="{{ url_for('dat_cho.thanh_toan', dat_id=booking.id) }}" class="btn btn-secondary">Thanh toán cọc</a>
+                    <a href="{{ url_for('tuong_tac.chat', doi_phuong_id=booking.chu_nha_id, phong_id=booking.phong_id, dat_phong_id=booking.id) }}" class="btn btn-secondary">Nhắn về đơn này</a>
                     {% if booking.trang_thai in ['cho_xac_nhan', 'da_xac_nhan'] %}
-                    <a href="{{ url_for('rooms.my_bookings', cancel=booking.id) }}" class="btn btn-danger" onclick="return confirm('Bạn có chắc muốn hủy đặt phòng này?')">Hủy đặt phòng</a>
+                    <form method="POST" action="{{ url_for('rooms.my_bookings') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="cancel_id" value="{{ booking.id }}">
+                        <input type="text" name="ly_do_huy" placeholder="Lý do hủy (không bắt buộc)">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Hủy đặt phòng này?')">Hủy đặt phòng</button>
+                    </form>
                     {% endif %}
                 </div>
             </div>

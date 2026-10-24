@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Banner trang chủ{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Banner trang chủ</h1>
+    <p>Không có banner nào đang hiện thì trang chủ giữ phần tiêu đề như cũ.</p>
+    <form method="POST" enctype="multipart/form-data" class="booking-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group"><label>Tiêu đề</label><input name="tieu_de" required></div>
+        <div class="form-group"><label>Liên kết</label><input name="lien_ket" placeholder="/ hoặc https://"></div>
+        <div class="form-group"><label>Thứ tự</label><input type="number" name="thu_tu" value="0"></div>
+        <div class="form-group"><label>Ảnh</label><input type="file" name="anh" accept="image/*"></div>
+        <button class="btn btn-primary" type="submit">Thêm banner</button>
+    </form>
+    {% if not ds %}
+    <p class="khoi-trong">Chưa có banner.</p>
+    {% endif %}
+    {% for b in ds %}
+    <div class="booking-card">
+        <strong>{{ b.tieu_de }}</strong>
+        {% if b.anh %}<img src="{{ image_url(b.anh) }}" alt="" width="180">{% endif %}
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="xoa">
+            <input type="hidden" name="banner_id" value="{{ b.id }}">
+            <button class="btn btn-danger" type="submit">Xóa</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

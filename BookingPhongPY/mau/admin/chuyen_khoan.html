@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Tài khoản nhận cọc{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Tài khoản nhận cọc</h1>
+    <p>Số này dùng để tạo VietQR. Mật khẩu webhook không hiện ở trang này.</p>
+    <form method="POST" class="booking-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group"><label>Tên ngân hàng</label><input name="ten_ngan_hang" value="{{ cau_hinh.ten_ngan_hang if cau_hinh else '' }}"></div>
+        <div class="form-group"><label>Mã BIN</label><input name="bank_bin" value="{{ cau_hinh.bank_bin if cau_hinh else '970422' }}"></div>
+        <div class="form-group"><label>Số tài khoản</label><input name="so_tai_khoan" required value="{{ cau_hinh.so_tai_khoan if cau_hinh else '' }}"></div>
+        <div class="form-group"><label>Chủ tài khoản</label><input name="chu_tai_khoan" value="{{ cau_hinh.chu_tai_khoan if cau_hinh else '' }}"></div>
+        <div class="form-group"><label>Hướng dẫn</label><textarea name="huong_dan" rows="3">{{ cau_hinh.huong_dan if cau_hinh else '' }}</textarea></div>
+        <button class="btn btn-primary" type="submit">Lưu</button>
+    </form>
+</div>
+{% endblock %}

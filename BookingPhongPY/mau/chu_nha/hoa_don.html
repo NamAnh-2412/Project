@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Hóa đơn{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Hóa đơn tháng</h1>
+    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group"><label>Hợp đồng</label>
+            <select name="hop_dong_id" required>
+                {% for hd in hop_dong_list %}<option value="{{ hd.id }}">#{{ hd.id }} {{ hd.tieu_de }} — {{ hd.ho_ten }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="form-group"><label>Tháng (YYYY-MM)</label><input name="thang_nam" placeholder="2026-10" required></div>
+        <div class="form-row">
+            <div class="form-group"><label>Số điện cũ</label><input type="number" name="so_dien_cu" value="0"></div>
+            <div class="form-group"><label>Số điện mới</label><input type="number" name="so_dien_moi" value="0"></div>
+            <div class="form-group"><label>Số nước cũ</label><input type="number" name="so_nuoc_cu" value="0"></div>
+            <div class="form-group"><label>Số nước mới</label><input type="number" name="so_nuoc_moi" value="0"></div>
+        </div>
+        <button class="btn btn-primary" type="submit">Chốt hóa đơn</button>
+    </form>
+    <h2>Đã chốt</h2>
+    {% for hd in hoa_don_list %}
+    <p>#{{ hd.id }} {{ hd.thang_nam }} {{ hd.tieu_de }} — {{ hd.ho_ten }} — {{ "{:,.0f}".format(hd.tong_tien) }} đ — {{ hd.trang_thai }}
+        <a href="{{ url_for('pms.in_hoa_don', hoa_don_id=hd.id) }}">In</a>
+        <a href="{{ url_for('pms.pdf_hoa_don', hoa_don_id=hd.id) }}">PDF</a>
+    </p>
+    {% if hd.trang_thai != 'da_dong' %}
+    <form method="POST" action="{{ url_for('pms.da_dong', hoa_don_id=hd.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-secondary" type="submit">Đã thu</button>
+    </form>
+    {% endif %}
+    {% else %}<p>Chưa có hóa đơn.</p>{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% set co_anh = anh_theo_phong.get(room.id, []) if anh_theo_phong is defined else [] %}
+{% set anh = co_anh if co_anh else ([room.anh_chinh or room.anh_dau_tien] if (room.anh_chinh or room.anh_dau_tien) else []) %}
+{% set la_phong_cua_minh = is_logged_in() and not is_admin() and session.get('user_id') == room.nguoi_dung_id %}
+{% set duoc_thich = tu_trang_thich|default(false) or (is_logged_in() and not la_phong_cua_minh and not is_chu_nha() and not is_admin()) %}
+<div class="room-card">
+    <div class="khung-truot">
+        {% for duong in anh %}
+        <img class="anh-truot {% if loop.first %}hien{% endif %}" src="{{ image_url(duong) }}" alt="{{ room.tieu_de }}" onerror="this.src='{{ url_for('static', filename='images/no-image.svg') }}'">
+        {% else %}
+        <img class="anh-truot hien" src="{{ url_for('static', filename='images/no-image.svg') }}" alt="{{ room.tieu_de }}">
+        {% endfor %}
+        {% if anh|length > 1 %}
+        <button type="button" class="nut-truot truoc" aria-label="Ảnh trước"><i class="fa-solid fa-chevron-left"></i></button>
+        <button type="button" class="nut-truot sau" aria-label="Ảnh sau"><i class="fa-solid fa-chevron-right"></i></button>
+        {% endif %}
+        {% if phong_co_hen is defined and room.id in phong_co_hen and room.trang_thai == 'con_trong' %}
+        <span class="huy-hieu hen">Đang có người hẹn xem</span>
+        {% elif room.trang_thai == 'da_thue' %}
+        <span class="huy-hieu thue">Đã cho thuê</span>
+        {% else %}
+        <span class="huy-hieu trong">Còn trống</span>
+        {% endif %}
+        {% if duoc_thich %}
+        <button class="favorite-btn {{ 'active' if (tu_trang_thich|default(false) or room.id in favorite_rooms) else '' }}" onclick="toggleFavorite({{ room.id }}, this, {removeCardOnUnfavorite: {{ 'true' if tu_trang_thich|default(false) else 'false' }}})" title="Yêu thích"><i class="fa-solid fa-heart"></i></button>
+        {% endif %}
+    </div>
+    <div class="room-info">
+        <h3>{{ room.tieu_de }} {% if room.is_vip %}<span class="vip">VIP</span>{% endif %}</h3>
+        <p class="room-price">{{ dinh_dang_tien(room.gia) }} / tháng</p>
+        {% if room.diem_tb %}<p><i class="fa-solid fa-star"></i> {{ room.diem_tb }} ({{ room.so_danh_gia }})</p>{% endif %}
+        <p class="room-address"><i class="fa-solid fa-location-dot"></i> {{ room.quan_huyen or room.dia_chi }}</p>
+        {% if room.dien_tich %}<p class="room-area"><i class="fa-solid fa-ruler-combined"></i> {{ room.dien_tich }} m²</p>{% endif %}
+        {% if tu_trang_thich|default(false) and room.ngay_yeu_thich %}
+        <p class="favorite-date"><small>Đã lưu {{ room.ngay_yeu_thich.strftime('%d/%m/%Y') }}</small></p>
+        {% endif %}
+        <a href="{{ url_for('rooms.room_detail', room_id=room.id) }}" class="btn btn-primary">Xem chi tiết</a>
+    </div>
+</div>

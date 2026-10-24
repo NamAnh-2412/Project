@@ -13,6 +13,7 @@
         {% if success %}<div class="alert alert-success">{{ success|safe }}</div>{% endif %}
 
         <form method="POST" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label>Họ và tên *</label>
                 <input type="text" name="ho_ten" required value="{{ request.form.get('ho_ten', '') }}">

@@ -1,7 +1,9 @@
-"""API endpoints - favorite_action (AJAX)"""
+"""API endpoints - favorite_action (AJAX) và chat."""
 from flask import Blueprint, request, jsonify
 from cau_hinh.co_so_du_lieu import get_db_connection, get_cursor
 from phu_tro.decorators_xac_thuc import is_logged_in, is_nguoi_thue, get_current_user
+from phu_tro.mo_rong import limiter
+from tuyen.tuong_tac import gui_tin_nhan_api, lay_tin_nhan_api
 
 api_bp = Blueprint('api', __name__)
 
@@ -14,18 +16,15 @@ def favorite_toggle():
     conn = get_db_connection()
     user = get_current_user(conn)
     if not user:
-        conn.close()
         return jsonify({'success': False, 'message': 'Vui lòng đăng nhập'})
 
     if not is_nguoi_thue(conn):
-        conn.close()
         return jsonify({'success': False, 'message': 'Chỉ Người thuê mới có thể yêu thích phòng'})
 
     phong_id = request.form.get('phong_id', 0, type=int)
     action = request.form.get('action', '')
 
     if not phong_id or action != 'toggle':
-        conn.close()
         return jsonify({'success': False, 'message': 'Thông tin không hợp lệ'})
 
     cursor = get_cursor(conn)
@@ -51,6 +50,16 @@ def favorite_toggle():
             conn.commit()
             return jsonify({'success': True, 'favorited': True, 'message': 'Đã thêm vào yêu thích'})
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Có lỗi xảy ra: {e}'})
-    finally:
-        conn.close()
+        return jsonify({'success': False, 'message': 'Có lỗi xảy ra'})
+
+
+@api_bp.route('/tin-nhan', methods=['GET'])
+@limiter.limit('40 per minute')
+def tin_nhan_lay():
+    return lay_tin_nhan_api()
+
+
+@api_bp.route('/tin-nhan', methods=['POST'])
+@limiter.limit('30 per minute')
+def tin_nhan_gui():
+    return gui_tin_nhan_api()

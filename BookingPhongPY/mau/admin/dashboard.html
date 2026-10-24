@@ -62,7 +62,40 @@
                 <h3>📋 Quản lý Booking</h3>
                 <p style="color: #666;">Xem tất cả đơn đặt phòng ({{ stats.total_bookings }} booking)</p>
             </a>
+            <a href="{{ url_for('admin_ext.duyet_tin') }}" class="menu-card" style="background: white; padding: 30px; border-radius: 10px; text-decoration: none; color: #333; display: block;">
+                <h3>✅ Duyệt tin</h3>
+                <p style="color: #666;">{{ stats.cho_duyet }} tin đang chờ</p>
+            </a>
+            <a href="{{ url_for('admin_ext.bao_cao') }}" class="menu-card" style="background: white; padding: 30px; border-radius: 10px; text-decoration: none; color: #333; display: block;">
+                <h3>🚩 Báo cáo</h3>
+                <p style="color: #666;">{{ stats.bao_cao_moi }} báo cáo mới</p>
+            </a>
+            <a href="{{ url_for('admin_ext.tien_ich') }}" class="menu-card" style="background: white; padding: 30px; border-radius: 10px; text-decoration: none; color: #333; display: block;">
+                <h3>🧰 Tiện ích</h3>
+                <p style="color: #666;">Thêm hoặc xóa tiện ích hiển thị khi đăng tin</p>
+            </a>
+            <a href="{{ url_for('admin_ext.chuyen_khoan') }}" class="menu-card" style="background: white; padding: 30px; border-radius: 10px; text-decoration: none; color: #333; display: block;">
+                <h3>🏦 Tài khoản nhận cọc</h3>
+                <p style="color: #666;">Sửa số VietQR trên web</p>
+            </a>
+            <a href="{{ url_for('admin_ext.banner') }}" class="menu-card" style="background: white; padding: 30px; border-radius: 10px; text-decoration: none; color: #333; display: block;">
+                <h3>🖼️ Banner</h3>
+                <p style="color: #666;">Ảnh đầu trang chủ</p>
+            </a>
+            <a href="{{ url_for('admin_ext.ma_giam') }}" class="menu-card" style="background: white; padding: 30px; border-radius: 10px; text-decoration: none; color: #333; display: block;">
+                <h3>🎟️ Mã giảm</h3>
+                <p style="color: #666;">Chỉ trừ tiền thuê tháng đầu</p>
+            </a>
         </div>
     </div>
+    <canvas id="bieuDo" height="120"></canvas>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+const duLieu = {{ bieu_do|tojson }};
+new Chart(document.getElementById('bieuDo'), {
+    type: 'bar',
+    data: { labels: duLieu.map(x => x.thang), datasets: [{ label: 'Đơn đặt', data: duLieu.map(x => x.so), backgroundColor: '#3498db' }] }
+});
+</script>
 {% endblock %}

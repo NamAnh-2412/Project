@@ -1,10 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}{{ phong.tieu_de }} - Booking Phòng Trọ{% endblock %}
 
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-{% endblock %}
-
 {% block content %}
 <div class="container">
     <div class="room-detail">
@@ -18,50 +14,48 @@
             <h1>{{ phong.tieu_de }}</h1>
             <div class="header-actions">
                 <span class="room-status status-{{ phong.trang_thai }}">{{ get_trang_thai_phong_text(phong.trang_thai) }}</span>
-                {% if is_logged_in() and not is_owner and not is_admin and not is_chu_nha %}
+                {% if is_logged_in() and not is_owner and not la_admin and not la_chu_nha %}
                 <button class="favorite-btn-large {{ 'active' if is_favorite else '' }}" onclick="toggleFavorite({{ phong.id }}, this, {changeInnerHTML: true})" title="{{ 'Bỏ yêu thích' if is_favorite else 'Yêu thích' }}">
-                    {{ '❤️ Đã yêu thích' if is_favorite else '🤍 Yêu thích' }}
+                    <i class="fa-{{ 'solid' if is_favorite else 'regular' }} fa-heart"></i> {{ 'Đã lưu' if is_favorite else 'Yêu thích' }}
                 </button>
                 {% endif %}
             </div>
         </div>
 
-        {% if images %}
-        <div class="room-images">
-            <div class="main-image">
-                <img id="mainImage" src="{{ image_url(images[0].duong_dan_anh) }}" alt="{{ phong.tieu_de }}" onerror="this.src='{{ url_for('static', filename='images/no-image.svg') }}'">
-            </div>
+        <div class="bo-anh {% if images|length < 2 %}mot-anh{% endif %}">
+            {% if images %}
+            <button type="button" class="anh-lon" data-mo-anh="0">
+                <img src="{{ image_url(images[0].duong_dan_anh) }}" alt="{{ phong.tieu_de }}" onerror="this.src='{{ url_for('static', filename='images/no-image.svg') }}'">
+            </button>
             {% if images|length > 1 %}
-            <div class="thumbnail-images">
-                {% for image in images %}
-                <img src="{{ image_url(image.duong_dan_anh) }}" alt="Hình ảnh {{ loop.index }}" onclick="changeMainImage('{{ image_url(image.duong_dan_anh) }}')" class="{{ 'active' if loop.first else '' }}" onerror="this.src='{{ url_for('static', filename='images/no-image.svg') }}'">
+            <div class="anh-phu">
+                {% for image in images[1:5] %}
+                <button type="button" data-mo-anh="{{ loop.index }}">
+                    <img src="{{ image_url(image.duong_dan_anh) }}" alt="Ảnh {{ loop.index + 1 }}" onerror="this.src='{{ url_for('static', filename='images/no-image.svg') }}'">
+                </button>
                 {% endfor %}
             </div>
             {% endif %}
+            {% else %}
+            <div class="anh-lon"><img src="{{ url_for('static', filename='images/no-image.svg') }}" alt="Không có ảnh"></div>
+            {% endif %}
         </div>
-        {% else %}
-        <div class="room-images">
-            <div class="main-image">
-                <img src="{{ url_for('static', filename='images/no-image.svg') }}" alt="Không có hình ảnh">
-            </div>
+        <div class="hop-anh" hidden>
+            <button type="button" class="dong-anh" aria-label="Đóng">×</button>
+            <button type="button" class="nut-truot truoc" aria-label="Ảnh trước"><i class="fa-solid fa-chevron-left"></i></button>
+            <img alt="">
+            <button type="button" class="nut-truot sau" aria-label="Ảnh sau"><i class="fa-solid fa-chevron-right"></i></button>
         </div>
-        {% endif %}
-
-        <div class="room-detail-content">
+        <div class="khung-chi-tiet">
             <div class="room-info-section">
                 <div class="info-box">
-                    <h3>💰 Giá thuê</h3>
-                    <p class="room-price-large">{{ "{:,.0f}".format(phong.gia) }} đ/tháng</p>
-                </div>
-
-                <div class="info-box">
-                    <h3>📋 Thông tin phòng</h3>
+                    <h3><i class="fa-solid fa-circle-info"></i> Thông tin phòng</h3>
                     <ul>
                         <li><strong>Địa chỉ:</strong> {{ phong.dia_chi }}</li>
                         {% if phong.quan_huyen %}<li><strong>Quận/Huyện:</strong> {{ phong.quan_huyen }}</li>{% endif %}
                         {% if phong.dien_tich %}<li><strong>Diện tích:</strong> {{ phong.dien_tich }} m²</li>{% endif %}
                         <li><strong>Trạng thái:</strong> {{ get_trang_thai_phong_text(phong.trang_thai) }}</li>
-                        {% if phong.chu_nha_ten and (is_owner or has_confirmed_booking or is_admin) %}
+                        {% if phong.chu_nha_ten and (is_owner or has_confirmed_booking or la_admin) %}
                         <li><strong>Chủ nhà:</strong> {{ phong.chu_nha_ten }}</li>
                         {% endif %}
                     </ul>
@@ -69,7 +63,7 @@
 
                 {% if tien_ich_list %}
                 <div class="info-box">
-                    <h3>🏠 Tiện ích</h3>
+                    <h3><i class="fa-solid fa-house"></i> Tiện ích</h3>
                     <div class="amenities-list">
                         {% for ti in tien_ich_list %}
                         <span class="amenity-item">
@@ -83,12 +77,12 @@
 
                 {% if phong.mo_ta %}
                 <div class="info-box">
-                    <h3>📝 Mô tả</h3>
-                    <p>{{ phong.mo_ta|replace('\n', '<br>')|safe }}</p>
+                    <h3><i class="fa-solid fa-align-left"></i> Mô tả</h3>
+                    <p class="mo-ta">{{ phong.mo_ta }}</p>
                 </div>
                 {% endif %}
 
-                {% if is_owner or has_confirmed_booking or is_admin %}
+                {% if is_owner or has_confirmed_booking or la_admin %}
                 <div class="info-box">
                     <h3>📞 Thông tin liên hệ chủ nhà</h3>
                     <ul>
@@ -104,48 +98,123 @@
                 </div>
                 {% endif %}
 
-                {% if phong.trang_thai == 'da_thue' %}
                 <div class="info-box">
-                    <p class="alert alert-warning">⚠️ Phòng này đã được thuê. Vui lòng tìm phòng khác.</p>
+                    <h3>Đánh giá {% if diem_tb %}⭐ {{ diem_tb }} ({{ so_danh_gia }}){% endif %}</h3>
+                    {% for dg in danh_gia_list %}
+                    <p><strong>{{ dg.ho_ten }}</strong> — {{ dg.so_sao }} sao</p>
+                    <p>{{ dg.noi_dung }}</p>
+                    {% if dg.phan_hoi_chu_nha %}<p>Chủ nhà: {{ dg.phan_hoi_chu_nha }}</p>{% endif %}
+                    {% if is_owner %}
+                    <form method="POST" action="{{ url_for('tuong_tac.phan_hoi', room_id=phong.id, review_id=dg.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="text" name="phan_hoi" placeholder="Phản hồi" value="{{ dg.phan_hoi_chu_nha or '' }}">
+                        <button class="btn btn-secondary" type="submit">Trả lời</button>
+                    </form>
+                    {% endif %}
+                    {% else %}
+                    <p>Chưa có đánh giá.</p>
+                    {% endfor %}
+                    {% if has_confirmed_booking %}
+                    <form method="POST" action="{{ url_for('tuong_tac.danh_gia', room_id=phong.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <select name="so_sao">{% for n in range(1, 6) %}<option value="{{ n }}">{{ n }} sao</option>{% endfor %}</select>
+                        <textarea name="noi_dung" required placeholder="Nhận xét"></textarea>
+                        <button class="btn btn-primary" type="submit">Gửi đánh giá</button>
+                    </form>
+                    {% endif %}
                 </div>
-                {% elif not is_logged_in() %}
+
                 <div class="info-box">
-                    <p class="alert alert-info">ℹ️ Bạn cần đăng nhập để đặt phòng.</p>
-                    <div style="margin-top: 15px;">
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Đăng nhập</a>
-                        <a href="{{ url_for('auth.register') }}" class="btn btn-secondary">Đăng ký tài khoản</a>
-                    </div>
+                    <h3>Hỏi đáp</h3>
+                    {% for hd in hoi_dap_list %}
+                    <p><strong>{{ hd.ho_ten }}:</strong> {{ hd.cau_hoi }}</p>
+                    {% if hd.cau_tra_loi %}<p>Chủ nhà: {{ hd.cau_tra_loi }}</p>{% endif %}
+                    {% if is_owner and not hd.cau_tra_loi %}
+                    <form method="POST" action="{{ url_for('tuong_tac.tra_loi', room_id=phong.id, qid=hd.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="text" name="cau_tra_loi" required>
+                        <button class="btn btn-secondary" type="submit">Trả lời</button>
+                    </form>
+                    {% endif %}
+                    {% else %}
+                    <p>Chưa có câu hỏi.</p>
+                    {% endfor %}
+                    {% if is_logged_in() and not la_admin %}
+                    <form method="POST" action="{{ url_for('tuong_tac.hoi_dap', room_id=phong.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="text" name="cau_hoi" required placeholder="Đặt câu hỏi">
+                        <button class="btn btn-secondary" type="submit">Gửi</button>
+                    </form>
+                    {% endif %}
                 </div>
-                {% elif is_owner %}
+
+                {% if is_logged_in() and not is_owner and not la_admin %}
                 <div class="info-box">
-                    <p class="alert alert-info">ℹ️ Đây là phòng của bạn.</p>
-                    <div style="margin-top: 15px;">
-                        <a href="{{ url_for('admin.edit_room', room_id=phong.id) }}" class="btn btn-warning">Chỉnh sửa phòng</a>
-                        <a href="{{ url_for('admin.manage_rooms') }}" class="btn btn-secondary">Quản lý phòng</a>
-                    </div>
-                </div>
-                {% elif is_admin %}
-                <div class="info-box">
-                    <p class="alert alert-danger" style="background-color: #f8d7da; color: #721c24;">🛡️ <strong>Góc nhìn Admin:</strong> Bạn không thể đặt phòng với tài khoản quản trị.</p>
-                    <div style="margin-top: 15px;">
-                        <a href="{{ url_for('admin.manage_phong') }}" class="btn btn-secondary">Về trang quản lý</a>
-                        <a href="{{ url_for('admin.manage_phong') }}?delete={{ phong.id }}" class="btn btn-danger" onclick="return confirm('Bạn có chắc muốn xóa phòng này?')">Xóa bài đăng này</a>
-                    </div>
-                </div>
-                {% elif is_chu_nha %}
-                <div class="info-box">
-                    <p class="alert alert-warning">🚫 Tài khoản <strong>Chủ nhà</strong> không có chức năng đặt phòng.</p>
-                </div>
-                {% elif phong.trang_thai == 'con_trong' %}
-                <div class="info-box booking-box">
-                    <h3 style="margin-top: 0; color: #27ae60;">✅ Phòng còn trống</h3>
-                    <p><strong>Bạn muốn đặt phòng này?</strong></p>
-                    <div style="margin-top: 20px;">
-                        <a href="{{ url_for('rooms.booking', phong_id=phong.id) }}" class="btn btn-success btn-large">📞 Đặt phòng ngay</a>
-                    </div>
+                    <h3>Báo cáo tin này</h3>
+                    <form method="POST" action="{{ url_for('tuong_tac.bao_cao', room_id=phong.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <select name="loai">
+                            <option value="sai_su_that">Không đúng sự thật</option>
+                            <option value="lua_coc">Lừa tiền cọc</option>
+                            <option value="sdt_ao">Số điện thoại ảo</option>
+                            <option value="khac">Khác</option>
+                        </select>
+                        <textarea name="noi_dung" required></textarea>
+                        <button class="btn btn-danger" type="submit">Gửi báo cáo</button>
+                    </form>
                 </div>
                 {% endif %}
+
             </div>
+            <aside class="cot-hanh-dong">
+                <p class="room-price-large">{{ dinh_dang_tien(phong.gia) }} / tháng</p>
+                <ul class="bang-phi">
+                    {% if phong.tien_dien %}<li>Điện <strong>{{ "{:,.0f}".format(phong.tien_dien) }} đ/số</strong></li>{% endif %}
+                    {% if phong.tien_nuoc %}<li>Nước <strong>{{ "{:,.0f}".format(phong.tien_nuoc) }} đ/khối</strong></li>{% endif %}
+                    {% if phong.tien_dich_vu %}<li>Dịch vụ <strong>{{ dinh_dang_tien(phong.tien_dich_vu) }}</strong></li>{% endif %}
+                    {% if phong.tien_coc %}<li>Tiền cọc <strong>{{ dinh_dang_tien(phong.tien_coc) }}</strong></li>{% endif %}
+                </ul>
+                {% if is_logged_in() and not is_owner and not la_admin and not la_chu_nha %}
+                <form method="POST" action="{{ url_for('dat_cho.dat_lich', room_id=phong.id) }}" class="form-lich">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <label>Ngày xem</label>
+                    <input type="date" name="ngay_hen" required>
+                    <label>Khung giờ</label>
+                    <select name="khung_gio">
+                        <option value="09:00">Sáng 09:00 – 11:00</option>
+                        <option value="14:00">Chiều 14:00 – 17:00</option>
+                        <option value="18:00">Tối 18:00 – 20:00</option>
+                    </select>
+                    <input type="text" name="ghi_chu" placeholder="Ghi chú">
+                    <button class="btn btn-primary" type="submit">Đặt lịch xem phòng</button>
+                </form>
+                <p><a href="{{ url_for('tuong_tac.chat', doi_phuong_id=phong.nguoi_dung_id, phong_id=phong.id) }}">Nhắn tin cho chủ nhà</a></p>
+                {% elif not is_logged_in() %}
+                <p>Đăng nhập bằng tài khoản người thuê để đặt lịch và nhắn tin.</p>
+                {% endif %}
+                {% if phong.trang_thai == 'da_thue' %}
+                <p class="alert alert-warning">Phòng này đã được thuê.</p>
+                {% elif not is_logged_in() %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Đăng nhập</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-secondary">Đăng ký</a>
+                {% elif is_owner %}
+                <p class="alert alert-info">Đây là phòng của bạn.</p>
+                <a href="{{ url_for('admin.edit_room', room_id=phong.id) }}" class="btn btn-warning">Chỉnh sửa phòng</a>
+                {% elif la_admin %}
+                <p class="alert alert-danger">Tài khoản quản trị không đặt phòng.</p>
+                {% elif la_chu_nha %}
+                <p class="alert alert-warning">Tài khoản chủ nhà không đặt phòng.</p>
+                {% elif don_giu and (not get_current_user() or don_giu.nguoi_dung_id != get_current_user().id) %}
+                <div class="khoi-trong">
+                    <p>Phòng đang được người khác giữ{% if don_giu.het_han_giu %} đến {{ don_giu.het_han_giu.strftime('%H:%M %d/%m') }}{% endif %}.</p>
+                </div>
+                {% elif phong.trang_thai == 'con_trong' %}
+                <a href="{{ url_for('rooms.booking', phong_id=phong.id) }}" class="btn btn-success btn-large">Đặt cọc giữ chỗ</a>
+                {% endif %}
+                {% if phong.chu_nha_sdt and (is_owner or has_confirmed_booking or la_admin) %}
+                <p><a href="tel:{{ phong.chu_nha_sdt }}">Gọi {{ phong.chu_nha_sdt }}</a></p>
+                {% endif %}
+            </aside>
         </div>
 
         {% if is_owner %}
@@ -158,5 +227,4 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/favorites.js') }}"></script>
-<script src="{{ url_for('static', filename='js/room-images.js') }}"></script>
 {% endblock %}

@@ -25,3 +25,7 @@
 
 /* Responsive */
 @import url('responsive.css');
+
+/* Lớp vá sau style gốc. Chủ đề tối vẫn nạp sau extra_css trong base.html. */
+@import url('nang-cap.css');
+@import url('giao-dien.css');

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Quên mật khẩu{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="auth-form">
+        <h2>Quên mật khẩu</h2>
+        {% if thong_bao %}<div class="alert alert-success">{{ thong_bao }}</div>{% endif %}
+        {% if link_dev %}
+        <div class="alert alert-error">SMTP chưa bật. Link đặt lại (chỉ hiện khi chạy local): <a href="{{ link_dev }}">{{ link_dev }}</a></div>
+        {% endif %}
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" required>
+            </div>
+            <button class="btn btn-primary" type="submit">Gửi hướng dẫn</button>
+        </form>
+        <p class="text-center"><a href="{{ url_for('auth.login') }}">Quay lại đăng nhập</a></p>
+    </div>
+</div>
+{% endblock %}

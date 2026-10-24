@@ -13,6 +13,7 @@ function toggleFavorite(phongId, btn, options = {}) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': (document.querySelector('meta[name="csrf-token"]') || {}).content || ''
         },
         body: 'phong_id=' + phongId + '&action=toggle'
     })
@@ -22,15 +23,17 @@ function toggleFavorite(phongId, btn, options = {}) {
             if (data.favorited) {
                 btn.classList.add('active');
                 if (changeInnerHTML) {
-                    btn.innerHTML = '❤️ Đã yêu thích';
+                    btn.innerHTML = '<i class="fa-solid fa-heart"></i> Đã lưu';
                 }
                 btn.title = 'Bỏ yêu thích';
+                if (window.baoNho) baoNho(true, 'Đã lưu phòng');
             } else {
                 btn.classList.remove('active');
                 if (changeInnerHTML) {
-                    btn.innerHTML = '🤍 Yêu thích';
+                    btn.innerHTML = '<i class="fa-regular fa-heart"></i> Yêu thích';
                 }
                 btn.title = 'Yêu thích';
+                if (window.baoNho) baoNho(true, 'Đã bỏ lưu phòng');
                 
                 // Xóa card nếu cần (dùng cho trang favorites.php)
                 if (removeCardOnUnfavorite) {
@@ -42,12 +45,12 @@ function toggleFavorite(phongId, btn, options = {}) {
                 }
             }
         } else {
-            alert(data.message || 'Có lỗi xảy ra');
+            if (window.baoNho) baoNho(false, data.message || 'Có lỗi xảy ra');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Có lỗi xảy ra');
+        if (window.baoNho) baoNho(false, 'Có lỗi xảy ra');
     });
 }
 

@@ -1,0 +1,11 @@
+{% if phan_trang and phan_trang.pages > 1 %}
+<nav class="phan-trang">
+    {% if phan_trang.page > 1 %}
+    <a href="?{{ tham_so }}&page={{ phan_trang.page - 1 }}">Trước</a>
+    {% endif %}
+    <span>Trang {{ phan_trang.page }}/{{ phan_trang.pages }} ({{ phan_trang.total }})</span>
+    {% if phan_trang.page < phan_trang.pages %}
+    <a href="?{{ tham_so }}&page={{ phan_trang.page + 1 }}">Sau</a>
+    {% endif %}
+</nav>
+{% endif %}

@@ -17,8 +17,19 @@
             <h3 style="margin: 0 0 10px 0; color: #666;">Phòng đã thuê</h3>
             <p style="font-size: 2em; margin: 0;">{{ stats.rented_rooms }}</p>
         </div>
+        <div style="background: white; padding: 20px; border-radius: 10px; border-left: 4px solid #9b59b6;">
+            <h3 style="margin: 0 0 10px 0; color: #666;">Doanh thu phòng đang thuê</h3>
+            <p style="font-size: 2em; margin: 0;">{{ "{:,.0f}".format(stats.doanh_thu) }} đ</p>
+        </div>
+        <div style="background: white; padding: 20px; border-radius: 10px; border-left: 4px solid #e67e22;">
+            <h3 style="margin: 0 0 10px 0; color: #666;">Lịch hẹn chờ duyệt</h3>
+            <p style="font-size: 2em; margin: 0;">{{ stats.lich_cho }}</p>
+        </div>
     </div>
     <a href="{{ url_for('admin.manage_rooms') }}" class="btn btn-primary">Đăng phòng</a>
     <a href="{{ url_for('admin.chu_nha_bookings') }}" class="btn btn-secondary">Đơn đặt phòng</a>
+    <a href="{{ url_for('pms.lich_hen') }}" class="btn btn-secondary">Lịch hẹn</a>
+    <a href="{{ url_for('pms.hop_dong') }}" class="btn btn-secondary">Hợp đồng</a>
+    <a href="{{ url_for('pms.hoa_don') }}" class="btn btn-secondary">Hóa đơn</a>
 </div>
 {% endblock %}

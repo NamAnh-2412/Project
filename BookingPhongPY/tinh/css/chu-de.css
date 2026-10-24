@@ -1,0 +1,311 @@
+/* Chế độ sáng giữ màu hiện tại. Chế độ tối đổi nền, ô và chữ cho dễ đọc. */
+
+html { color-scheme: light; }
+html[data-chu-de="toi"] { color-scheme: dark; }
+
+.nut-chu-de {
+    flex: 0 0 auto;
+    margin-left: 12px;
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    border-radius: 999px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.nut-chu-de:hover { background: rgba(255, 255, 255, 0.14); }
+
+html[data-chu-de="toi"] body {
+    background: #101820;
+    color: #e7eef6;
+}
+
+html[data-chu-de="toi"] .header,
+html[data-chu-de="toi"] .footer {
+    background-color: #0c141d;
+}
+
+html[data-chu-de="toi"] h1,
+html[data-chu-de="toi"] h2,
+html[data-chu-de="toi"] h3,
+html[data-chu-de="toi"] h4,
+html[data-chu-de="toi"] label,
+html[data-chu-de="toi"] .filter-header h3,
+html[data-chu-de="toi"] .filter-block-title,
+html[data-chu-de="toi"] .filter-option span,
+html[data-chu-de="toi"] .room-info h3,
+html[data-chu-de="toi"] .booking-info h3,
+html[data-chu-de="toi"] .info-box h3,
+html[data-chu-de="toi"] .stat-number,
+html[data-chu-de="toi"] .auth-form h2,
+html[data-chu-de="toi"] .auth-form .form-group label,
+html[data-chu-de="toi"] .auth-form .text-center {
+    color: #e7eef6;
+}
+
+html[data-chu-de="toi"] .room-address,
+html[data-chu-de="toi"] .room-area,
+html[data-chu-de="toi"] .room-district,
+html[data-chu-de="toi"] .favorite-date,
+html[data-chu-de="toi"] .no-results,
+html[data-chu-de="toi"] .stat-card h3,
+html[data-chu-de="toi"] .range-separator,
+html[data-chu-de="toi"] .booking-info p,
+html[data-chu-de="toi"] .password-icon {
+    color: #b7c4d4;
+}
+
+html[data-chu-de="toi"] .room-price,
+html[data-chu-de="toi"] .room-price-large {
+    color: #ff8d86;
+}
+
+html[data-chu-de="toi"] .han-giu { color: #f0c27a; }
+
+html[data-chu-de="toi"] .filter-sidebar-content,
+html[data-chu-de="toi"] .room-card,
+html[data-chu-de="toi"] .room-detail,
+html[data-chu-de="toi"] .info-box,
+html[data-chu-de="toi"] .stat-card,
+html[data-chu-de="toi"] .menu-card,
+html[data-chu-de="toi"] .room-form,
+html[data-chu-de="toi"] .table-responsive,
+html[data-chu-de="toi"] .booking-card,
+html[data-chu-de="toi"] .booking-form,
+html[data-chu-de="toi"] .the-banner,
+html[data-chu-de="toi"] .the-phong,
+html[data-chu-de="toi"] #khung-chat {
+    background: #1c2633;
+    color: #e7eef6;
+    border-color: #314156;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+html[data-chu-de="toi"] .menu-card,
+html[data-chu-de="toi"] .menu-card p,
+html[data-chu-de="toi"] .the-phong,
+html[data-chu-de="toi"] .the-banner {
+    color: #e7eef6;
+}
+
+html[data-chu-de="toi"] .filter-header,
+html[data-chu-de="toi"] .filter-block,
+html[data-chu-de="toi"] .info-box li,
+html[data-chu-de="toi"] .table td,
+html[data-chu-de="toi"] .table th {
+    border-color: #314156;
+}
+
+html[data-chu-de="toi"] .filter-option:hover { background: #243244; }
+
+html[data-chu-de="toi"] .table {
+    background: #1c2633;
+    color: #e7eef6;
+}
+
+html[data-chu-de="toi"] .table th {
+    background: #0f1722;
+    color: #f4f7fb;
+}
+
+html[data-chu-de="toi"] .table tr:hover { background: #243244; }
+
+html[data-chu-de="toi"] input,
+html[data-chu-de="toi"] select,
+html[data-chu-de="toi"] textarea,
+html[data-chu-de="toi"] .filter-input,
+html[data-chu-de="toi"] .auth-form .form-group input,
+html[data-chu-de="toi"] .auth-form .form-group select,
+html[data-chu-de="toi"] .auth-form .form-group textarea,
+html[data-chu-de="toi"] .auth-form .password-input-wrapper input {
+    background: #121a24;
+    color: #e7eef6;
+    border-color: #3a4a5e;
+}
+
+html[data-chu-de="toi"] input::placeholder,
+html[data-chu-de="toi"] textarea::placeholder { color: #8ea0b3; }
+
+html[data-chu-de="toi"] .auth-form .form-group input:focus,
+html[data-chu-de="toi"] .auth-form .form-group select:focus,
+html[data-chu-de="toi"] .auth-form .form-group textarea:focus,
+html[data-chu-de="toi"] .filter-input:focus {
+    background: #121a24;
+    border-color: #5aa2e0;
+}
+
+html[data-chu-de="toi"] .checkbox-label,
+html[data-chu-de="toi"] .amenity-item,
+html[data-chu-de="toi"] .nut-ngay {
+    background: #243244;
+    color: #e7eef6;
+    border-color: #3a4a5e;
+}
+
+html[data-chu-de="toi"] .nut-ngay.chon {
+    background: #1f6feb;
+    color: #fff;
+    border-color: #1f6feb;
+}
+
+html[data-chu-de="toi"] .favorite-btn-large {
+    background: #1c2633;
+    color: #ff8d86;
+    border-color: #e74c3c;
+}
+
+html[data-chu-de="toi"] .favorite-btn-large:hover,
+html[data-chu-de="toi"] .favorite-btn-large.active {
+    background: #e74c3c;
+    color: #fff;
+}
+
+html[data-chu-de="toi"] .khoi-trong {
+    background: #1c2633;
+    color: #e7eef6;
+    border-color: #3a4a5e;
+}
+
+html[data-chu-de="toi"] .khoi-loi,
+html[data-chu-de="toi"] .alert-error {
+    background: #3d2024;
+    color: #ffd0d0;
+    border-color: #7a3038;
+}
+
+html[data-chu-de="toi"] .alert-success {
+    background: #143226;
+    color: #c8f5d4;
+    border-color: #1f6b45;
+}
+
+html[data-chu-de="toi"] .alert-info {
+    background: #1a2744;
+    color: #d4e2ff;
+    border-color: #2c4d86;
+}
+
+html[data-chu-de="toi"] .alert-warning {
+    background: #3d3214;
+    color: #f6e7c1;
+    border-color: #7a6420;
+}
+
+html[data-chu-de="toi"] .bubble.toi {
+    background: #1e3a5f;
+    color: #e7eef6;
+}
+
+html[data-chu-de="toi"] .bubble.khac {
+    background: #2a3544;
+    color: #e7eef6;
+}
+
+html[data-chu-de="toi"] .auth-form {
+    background: rgba(22, 30, 42, 0.96);
+    color: #e7eef6;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-chu-de="toi"] .auth-form .text-center a { color: #b7c6ff; }
+html[data-chu-de="toi"] .back-link { color: #8ebfff; }
+
+html[data-chu-de="toi"] main a { color: #9ec1ff; }
+
+html[data-chu-de="toi"] main a.btn,
+html[data-chu-de="toi"] main .btn,
+html[data-chu-de="toi"] main .phan-trang a,
+html[data-chu-de="toi"] main .nhan-trang-thai,
+html[data-chu-de="toi"] main .badge,
+html[data-chu-de="toi"] main .vip,
+html[data-chu-de="toi"] main .btn-filter-submit,
+html[data-chu-de="toi"] main .btn-reset-filter {
+    color: #fff;
+}
+
+html[data-chu-de="toi"] main .menu-card,
+html[data-chu-de="toi"] main .menu-card p,
+html[data-chu-de="toi"] main .the-banner,
+html[data-chu-de="toi"] main .the-phong {
+    color: #e7eef6;
+}
+
+html[data-chu-de="toi"] .btn-outline {
+    color: #fff;
+    border-color: #fff;
+}
+
+html[data-chu-de="toi"] .btn-outline:hover {
+    background: #fff;
+    color: #102033;
+}
+
+/* Ô viết màu trực tiếp trong HTML */
+html[data-chu-de="toi"] [style*="background: white"],
+html[data-chu-de="toi"] [style*="background:white"],
+html[data-chu-de="toi"] [style*="background:#fff"],
+html[data-chu-de="toi"] [style*="background: #fff"],
+html[data-chu-de="toi"] [style*="background:#f9f9f9"],
+html[data-chu-de="toi"] [style*="background: #f8f9fa"],
+html[data-chu-de="toi"] [style*="background:#f8f9fa"] {
+    background: #1c2633 !important;
+    color: #e7eef6;
+}
+
+html[data-chu-de="toi"] [style*="color: #666"],
+html[data-chu-de="toi"] [style*="color:#666"],
+html[data-chu-de="toi"] [style*="color: #333"],
+html[data-chu-de="toi"] [style*="color:#333"] {
+    color: #c5d0dc !important;
+}
+
+html[data-chu-de="toi"] [style*="#fff3cd"] {
+    background: #3d3214 !important;
+    color: #f6e7c1;
+}
+
+html[data-chu-de="toi"] [style*="#d4edda"],
+html[data-chu-de="toi"] [style*="#e8f5e9"] {
+    background: #163326 !important;
+    color: #d8f8e2;
+}
+
+html[data-chu-de="toi"] [style*="#e2e3e5"] {
+    background: #2c3542 !important;
+    color: #e7eef6;
+}
+
+html[data-chu-de="toi"] [style*="#f8d7da"] {
+    background: #3d2024 !important;
+    color: #ffd0d4 !important;
+}
+
+html[data-chu-de="toi"] [style*="color: #27ae60"],
+html[data-chu-de="toi"] [style*="color:#27ae60"] {
+    color: #7dcea0 !important;
+}
+
+html[data-chu-de="toi"] .chip { background: #243244; color: #e7eef6; border-color: #3a4a5e; }
+html[data-chu-de="toi"] .chip.chon { background: #1f6feb; color: #fff; border-color: #1f6feb; }
+html[data-chu-de="toi"] .khung-truot,
+html[data-chu-de="toi"] .bo-anh button,
+html[data-chu-de="toi"] .bo-anh .anh-lon { background: #121a24; }
+html[data-chu-de="toi"] .cot-hanh-dong { background: #1c2633; color: #e7eef6; border-color: #314156; }
+html[data-chu-de="toi"] .bang-phi li { border-color: #314156; }
+html[data-chu-de="toi"] .form-lich input,
+html[data-chu-de="toi"] .form-lich select { background: #121a24; color: #e7eef6; border-color: #3a4a5e; }
+html[data-chu-de="toi"] .cot-hanh-dong .room-price-large { color: #ff8d86; }
+
+@media print {
+    html[data-chu-de="toi"] body,
+    html[data-chu-de="toi"] .room-detail,
+    html[data-chu-de="toi"] .info-box,
+    html[data-chu-de="toi"] .table {
+        background: #fff !important;
+        color: #111 !important;
+    }
+}

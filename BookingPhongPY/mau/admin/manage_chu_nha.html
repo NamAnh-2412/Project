@@ -8,10 +8,6 @@
         <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">← Về trang quản lý tổng</a>
     </div>
 
-    {% for message in get_flashed_messages(with_categories=true) %}
-    <div class="alert alert-{{ 'error' if message[0] == 'error' else 'success' }}">{{ message[1] }}</div>
-    {% endfor %}
-
     <div class="table-responsive">
         <table class="table">
             <thead>
@@ -28,6 +24,14 @@
                     <td>{{ nd.phong_da_thue or 0 }}</td>
                     <td>
                         <a href="{{ url_for('admin.view_chu_nha', chu_nha_id=nd.id) }}" class="btn btn-sm btn-primary">Xem</a>
+                        <form method="POST" action="{{ url_for('admin_ext.xac_minh', user_id=nd.id) }}" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-secondary" type="submit">{{ 'Bỏ tích' if nd.is_verified else 'Xác minh' }}</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('admin_ext.khoa_tai_khoan', user_id=nd.id) }}" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-warning" type="submit">{{ 'Mở khóa' if nd.bi_khoa else 'Khóa' }}</button>
+                        </form>
                         <a href="{{ url_for('admin.manage_chu_nha') }}?delete={{ nd.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Xóa chủ nhà này?')">Xóa</a>
                     </td>
                 </tr>

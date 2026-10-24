@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Tin nhắn{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Tin nhắn</h1>
+    {% for ht in hoi_thoai %}
+    <p><a href="{{ url_for('tuong_tac.chat', doi_phuong_id=ht.doi_phuong, phong_id=ht.phong_id) }}">{{ ht.ho_ten }} — {{ ht.tieu_de }}</a></p>
+    {% else %}
+    <p>Chưa có cuộc trò chuyện. Hãy mở từ trang chi tiết phòng.</p>
+    {% endfor %}
+</div>
+{% endblock %}

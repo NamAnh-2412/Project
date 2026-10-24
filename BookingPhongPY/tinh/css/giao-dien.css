@@ -1,0 +1,42 @@
+.day-chip { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 16px; padding-bottom: 4px; }
+.chip { border: 1px solid #d5dde5; background: #fff; color: #243040; border-radius: 999px; padding: 6px 12px; text-decoration: none; white-space: nowrap; }
+.chip.chon { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+
+.khung-truot { position: relative; height: 210px; background: #e9eef3; }
+.anh-truot { display: none; width: 100%; height: 210px; object-fit: cover; }
+.anh-truot.hien { display: block; }
+.nut-truot { position: absolute; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(255,255,255,.92); color: #1c2633; cursor: pointer; }
+.nut-truot.truoc { left: 8px; }
+.nut-truot.sau { right: 8px; }
+.huy-hieu { position: absolute; top: 10px; right: 10px; color: #fff; border-radius: 999px; padding: 4px 10px; font-size: 13px; z-index: 2; }
+.huy-hieu.trong { background: #15803d; }
+.huy-hieu.hen { background: #d97706; }
+.huy-hieu.thue { background: #64748b; }
+.khung-truot .favorite-btn { z-index: 2; }
+
+.bo-anh { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin: 12px 0 20px; }
+.bo-anh.mot-anh { grid-template-columns: 1fr; }
+.bo-anh button, .bo-anh .anh-lon { border: 0; padding: 0; background: #e9eef3; overflow: hidden; border-radius: 12px; cursor: pointer; }
+.bo-anh img { width: 100%; height: 180px; object-fit: cover; display: block; }
+.anh-lon img { height: 368px; }
+.anh-phu { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.hop-anh { position: fixed; inset: 0; background: rgba(8, 12, 18, .9); z-index: 4000; display: flex; align-items: center; justify-content: center; }
+.hop-anh[hidden] { display: none !important; }
+.hop-anh img { max-width: min(92vw, 1100px); max-height: 84vh; object-fit: contain; }
+.hop-anh .dong-anh { position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: #fff; font-size: 24px; cursor: pointer; }
+.hop-anh .nut-truot { background: #fff; }
+
+.khung-chi-tiet { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.cot-hanh-dong { position: sticky; top: 16px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.cot-hanh-dong .btn { text-align: center; }
+.bang-phi { list-style: none; margin: 0; padding: 0; }
+.bang-phi li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #e5e7eb; }
+.form-lich { display: flex; flex-direction: column; gap: 8px; }
+.form-lich input, .form-lich select { width: 100%; padding: 8px; border: 1px solid #d5dde5; border-radius: 8px; }
+.mo-ta { white-space: pre-wrap; }
+
+@media (max-width: 900px) {
+    .khung-chi-tiet, .bo-anh { grid-template-columns: 1fr; }
+    .cot-hanh-dong { position: static; }
+    .anh-lon img, .bo-anh img { height: 220px; }
+}

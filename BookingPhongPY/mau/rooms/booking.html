@@ -5,20 +5,49 @@
 <div class="container">
     <h1>Đặt phòng</h1>
 
-    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
-    {% if success %}
-    <div class="alert alert-success">{{ success }}</div>
-    <a href="{{ url_for('main.index') }}" class="btn btn-primary">Quay về trang chủ</a>
+    {% if error %}<div class="alert alert-error khoi-loi">{{ error }}</div>{% endif %}
+    {% if don_giu and user and don_giu.nguoi_dung_id != user.id %}
+    <div class="khoi-trong">
+        <p>Phòng đang được giữ{% if don_giu.het_han_giu %} đến {{ don_giu.het_han_giu.strftime('%H:%M %d/%m/%Y') }}{% endif %}.</p>
+        <a href="{{ url_for('rooms.room_detail', room_id=phong.id) }}" class="btn btn-secondary">Quay lại</a>
+    </div>
+    {% elif not user.email_da_xac_thuc %}
+    <div class="khoi-trong">
+        <p>Hãy xác thực email trước khi đặt phòng.</p>
+        <a href="{{ url_for('auth.xac_thuc_email') }}" class="btn btn-primary">Xác thực email</a>
+    </div>
     {% else %}
     <div class="room-detail">
         <h2>{{ phong.tieu_de }}</h2>
         <p><strong>Địa chỉ:</strong> {{ phong.dia_chi }}</p>
-        <p><strong>Giá:</strong> {{ "{:,.0f}".format(phong.gia) }} đ/tháng</p>
+        <p><strong>Giá thuê chốt lúc gửi đơn:</strong> {{ "{:,.0f}".format(phong.gia) }} đ/tháng</p>
+        <p><strong>Tiền cọc:</strong> {{ "{:,.0f}".format(phong.tien_coc or 0) }} đ. Mã giảm không trừ khoản này.</p>
 
         <form method="POST" action="" class="booking-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="phong_id" value="{{ phong.id }}">
+            <input type="hidden" name="ngay_chuyen_vao" id="ngay_chuyen_vao" required>
             <div class="form-group">
                 <label>Số điện thoại liên hệ *</label>
                 <input type="tel" name="so_dien_thoai_lien_he" required value="{{ request.form.get('so_dien_thoai_lien_he', user.so_dien_thoai if user else '') }}">
+            </div>
+            <div class="form-group">
+                <label>Ngày chuyển vào</label>
+                <div class="dai-ngay" id="dai-ngay"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Thời hạn thuê (tháng)</label>
+                    <input type="number" name="thoi_han_thue_thang" min="1" value="6">
+                </div>
+                <div class="form-group">
+                    <label>Số người ở</label>
+                    <input type="number" name="so_nguoi_o" min="1" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Mã giảm (nếu có)</label>
+                    <input type="text" name="ma_giam" value="{{ request.form.get('ma_giam', '') }}" placeholder="Chỉ trừ tiền thuê tháng đầu">
+                </div>
             </div>
             <div class="form-group">
                 <label>Tin nhắn (nếu có)</label>
@@ -30,4 +59,34 @@
     </div>
     {% endif %}
 </div>
+<script>
+const oNgay = document.getElementById('ngay_chuyen_vao');
+const dai = document.getElementById('dai-ngay');
+if (oNgay && dai) {
+    const homNay = new Date();
+    const isoLocal = (d) => {
+        const thang = String(d.getMonth() + 1).padStart(2, '0');
+        const ngay = String(d.getDate()).padStart(2, '0');
+        return d.getFullYear() + '-' + thang + '-' + ngay;
+    };
+    for (let i = 0; i < 14; i++) {
+        const d = new Date(homNay.getFullYear(), homNay.getMonth(), homNay.getDate() + i);
+        const iso = isoLocal(d);
+        const nut = document.createElement('button');
+        nut.type = 'button';
+        nut.className = 'nut-ngay';
+        nut.textContent = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+        nut.addEventListener('click', () => {
+            oNgay.value = iso;
+            dai.querySelectorAll('.nut-ngay').forEach(n => n.classList.remove('chon'));
+            nut.classList.add('chon');
+        });
+        if (i === 0) {
+            oNgay.value = iso;
+            nut.classList.add('chon');
+        }
+        dai.appendChild(nut);
+    }
+}
+</script>
 {% endblock %}

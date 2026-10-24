@@ -36,18 +36,28 @@
                     <div>💰 {{ "{:,.0f}".format(booking.phong_gia) }} đ/tháng | 📍 {{ booking.phong_dia_chi }}</div>
                     {% if booking.so_dien_thoai_lien_he %}<div>📞 SĐT: {{ booking.so_dien_thoai_lien_he }}</div>{% endif %}
                     {% if booking.tin_nhan %}<div>💬 {{ booking.tin_nhan }}</div>{% endif %}
+                    {% if booking.ngay_chuyen_vao %}<div>Ngày vào: {{ booking.ngay_chuyen_vao }}</div>{% endif %}
+                    <div>Cọc: {{ "{:,.0f}".format(booking.tien_coc_phai_tra or 0) }} đ — {{ booking.trang_thai_thanh_toan or 'chua_thanh_toan' }}</div>
                     <div style="margin-top: 10px;">
                         {% if booking.trang_thai == 'cho_xac_nhan' %}
                         <form method="POST" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="booking_id" value="{{ booking.id }}">
                             <button type="submit" name="action" value="approve" class="btn btn-sm btn-success" onclick="return confirm('Xác nhận đơn này?')">✓ Xác nhận</button>
                         </form>
                         <form method="POST" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="booking_id" value="{{ booking.id }}">
                             <button type="submit" name="action" value="reject" class="btn btn-sm btn-danger" onclick="return confirm('Từ chối đơn này?')">✕ Từ chối</button>
                         </form>
                         {% else %}
                         <span>Đơn đã được xử lý</span>
+                        {% endif %}
+                        {% if booking.trang_thai_thanh_toan != 'da_dat_coc' %}
+                        <form method="POST" action="{{ url_for('dat_cho.xac_nhan_coc', dat_id=booking.id) }}" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-primary">Đã nhận cọc</button>
+                        </form>
                         {% endif %}
                     </div>
                 </div>

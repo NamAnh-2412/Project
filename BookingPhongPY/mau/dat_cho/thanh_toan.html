@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Thanh toán cọc{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Đặt cọc giữ phòng</h1>
+    <p><strong>{{ don.tieu_de }}</strong> — {{ don.dia_chi }}</p>
+    {% if so_tien <= 0 %}
+    <p>Phòng này chưa cấu hình tiền cọc. Đơn đã được gửi, chờ chủ nhà xác nhận.</p>
+    {% else %}
+    <p>Số tiền cọc đã chốt: <strong>{{ "{:,.0f}".format(so_tien) }} đ</strong></p>
+    <p>Nội dung chuyển khoản: <strong id="noi-dung-ck">{{ ma }}</strong>
+        <button type="button" class="btn btn-secondary" id="copy-ck">Sao chép</button>
+    </p>
+    {% if chuyen_khoan.so_tai_khoan %}
+    <p>Tài khoản: {{ chuyen_khoan.so_tai_khoan }} — {{ chuyen_khoan.chu_tai_khoan }} {{ chuyen_khoan.ten_ngan_hang }}</p>
+    {% endif %}
+    {% if chuyen_khoan.huong_dan %}<p>{{ chuyen_khoan.huong_dan }}</p>{% endif %}
+    {% if qr %}
+    <img src="{{ qr }}" alt="VietQR" width="280">
+    {% else %}
+    <p>Chưa cấu hình BANK_ACCOUNT trong file .env nên chưa tạo được mã QR. Chủ nhà vẫn có thể xác nhận đã nhận tiền.</p>
+    {% endif %}
+    <p>Trạng thái: {{ giao_dich.trang_thai if giao_dich else 'chua_tao' }} / đơn {{ don.trang_thai_thanh_toan }}</p>
+    {% if don.trang_thai_thanh_toan != 'da_dat_coc' %}
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-primary" name="action" value="da_chuyen" type="submit">Tôi đã chuyển khoản</button>
+    </form>
+    {% endif %}
+    {% endif %}
+    <p><a href="{{ url_for('rooms.my_bookings') }}">Về đơn của tôi</a></p>
+</div>
+<script>
+const nut = document.getElementById('copy-ck');
+if (nut) nut.addEventListener('click', () => {
+    const ma = document.getElementById('noi-dung-ck').textContent.trim();
+    navigator.clipboard.writeText(ma).then(() => { nut.textContent = 'Đã chép'; });
+});
+</script>
+{% endblock %}

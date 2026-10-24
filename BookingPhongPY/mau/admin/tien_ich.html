@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Tiện ích{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Danh mục tiện ích</h1>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="ten" placeholder="Tên tiện ích" required>
+        <input name="icon" placeholder="Icon" maxlength="8">
+        <button class="btn btn-primary" type="submit">Thêm</button>
+    </form>
+    {% for ti in ds %}
+    <form method="POST" style="margin-top:8px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="xoa">
+        <input type="hidden" name="id" value="{{ ti.id }}">
+        {{ ti.icon or '' }} {{ ti.ten }}
+        <button class="btn btn-danger" type="submit">Xóa</button>
+    </form>
+    {% endfor %}
+</div>
+{% endblock %}

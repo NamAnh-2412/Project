@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Phiếu thu {{ hd.thang_nam }}{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Phiếu thu tiền phòng</h1>
+    <p>Tháng {{ hd.thang_nam }} — {{ hd.tieu_de }}</p>
+    <p>{{ hd.dia_chi }}</p>
+    <p>Khách: {{ hd.ho_ten }} ({{ hd.email }})</p>
+    <p>Điện {{ hd.so_dien_cu }} → {{ hd.so_dien_moi }}, đơn giá {{ hd.gia_dien }}</p>
+    <p>Nước {{ hd.so_nuoc_cu }} → {{ hd.so_nuoc_moi }}, đơn giá {{ hd.gia_nuoc }}</p>
+    <p>Tiền phòng {{ "{:,.0f}".format(hd.tien_phong) }} đ, dịch vụ {{ "{:,.0f}".format(hd.tien_dich_vu) }} đ</p>
+    <h2>Tổng: {{ "{:,.0f}".format(hd.tong_tien) }} đ</h2>
+    <p>Trạng thái: {{ hd.trang_thai }}</p>
+    <button class="btn btn-primary" onclick="window.print()">In phiếu</button>
+    <a class="btn btn-secondary" href="{{ url_for('pms.pdf_hoa_don', hoa_don_id=hd.id) }}">Tải PDF</a>
+</div>
+{% endblock %}

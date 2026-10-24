@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Thông báo{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Thông báo</h1>
+    <form method="POST" action="{{ url_for('tuong_tac.doc_het') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-secondary" type="submit">Đánh dấu đã đọc</button>
+    </form>
+    {% for tb in ds %}
+    <div style="background:#fff;padding:12px;margin-top:10px;border-radius:8px;{% if not tb.da_doc %}border-left:4px solid #1f6feb;{% endif %}">
+        <strong>{{ tb.tieu_de }}</strong>
+        <p>{{ tb.noi_dung }}</p>
+        {% if tb.duong_dan_lien_ket %}<a href="{{ tb.duong_dan_lien_ket }}">Mở</a>{% endif %}
+    </div>
+    {% else %}
+    <p>Chưa có thông báo.</p>
+    {% endfor %}
+</div>
+{% endblock %}
