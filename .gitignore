@@ -8,3 +8,12 @@
 **/*.keystore
 **/QuanLyBanHang_key/
 .DS_Store
+
+# Visual Studio / .NET
+**/.vs/
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
