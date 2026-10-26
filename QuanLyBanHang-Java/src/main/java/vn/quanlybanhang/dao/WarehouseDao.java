@@ -17,6 +17,7 @@ import java.util.Optional;
 
 import vn.quanlybanhang.model.NhapKho;
 import vn.quanlybanhang.model.NhapKhoItem;
+import vn.quanlybanhang.config.SchemaCache;
 
 public class WarehouseDao extends BaseDao {
 
@@ -139,14 +140,7 @@ public class WarehouseDao extends BaseDao {
     }
 
     public boolean tableExists(String tableName) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?";
-        try (Connection connection = getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, tableName);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                return resultSet.next() && resultSet.getInt(1) > 0;
-            }
-        }
+        return SchemaCache.tableExists(tableName);
     }
 
     /**
@@ -178,19 +172,14 @@ public class WarehouseDao extends BaseDao {
              Statement statement = connection.createStatement()) {
             statement.executeUpdate(createKhoLot);
             statement.executeUpdate(createExpiryAlerts);
+            if (!SchemaCache.tableExists("kho_lot") || !SchemaCache.tableExists("expiry_alerts")) {
+                SchemaCache.refresh(connection);
+            }
         }
     }
 
     public boolean columnExists(String tableName, String columnName) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?";
-        try (Connection connection = getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, tableName);
-            statement.setString(2, columnName);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                return resultSet.next() && resultSet.getInt(1) > 0;
-            }
-        }
+        return SchemaCache.columnExists(tableName, columnName);
     }
 
     public List<Map<String, Object>> getExpiryLots(String filter, String fromDate, String toDate) throws SQLException {

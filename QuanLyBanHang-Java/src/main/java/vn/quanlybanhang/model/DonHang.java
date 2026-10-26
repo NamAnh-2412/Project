@@ -19,6 +19,8 @@ public class DonHang {
     private String hinhThucNhan;
     private String trangThai;
     private LocalDateTime ngayTao;
+    private Integer nhanVienId;
+    private String maGiam;
     private List<OrderItem> items = new ArrayList<>();
 
     public int getId() {
@@ -115,6 +117,22 @@ public class DonHang {
 
     public void setNgayTao(LocalDateTime ngayTao) {
         this.ngayTao = ngayTao;
+    }
+
+    public Integer getNhanVienId() {
+        return nhanVienId;
+    }
+
+    public void setNhanVienId(Integer nhanVienId) {
+        this.nhanVienId = nhanVienId;
+    }
+
+    public String getMaGiam() {
+        return maGiam;
+    }
+
+    public void setMaGiam(String maGiam) {
+        this.maGiam = maGiam;
     }
 
     public List<OrderItem> getItems() {

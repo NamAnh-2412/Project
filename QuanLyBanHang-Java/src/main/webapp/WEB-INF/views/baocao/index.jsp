@@ -22,6 +22,10 @@
                     <button type="submit" class="btn btn-primary" style="padding:8px 20px;">
                         <i class="fas fa-filter"></i> Loc
                     </button>
+                    <a class="btn btn-secondary" style="padding:8px 20px;"
+                       href="${pageContext.request.contextPath}/bao-cao/xuat?tab=${tab}&ngay_bd=${ngay_bd}&ngay_kt=${ngay_kt}">
+                        <i class="fas fa-file-csv"></i> Xuất CSV
+                    </a>
                 </form>
 
                 <div class="stats-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-bottom:30px;">

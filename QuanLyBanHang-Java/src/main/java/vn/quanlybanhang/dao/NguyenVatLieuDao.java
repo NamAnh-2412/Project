@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import vn.quanlybanhang.config.SchemaCache;
 import vn.quanlybanhang.model.NguyenVatLieu;
 
 public class NguyenVatLieuDao extends BaseDao {
@@ -302,16 +303,7 @@ public class NguyenVatLieuDao extends BaseDao {
     }
 
     private boolean columnExists(String tableName, String columnName) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() "
-                + "AND table_name = ? AND column_name = ?";
-        try (Connection connection = getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, tableName);
-            statement.setString(2, columnName);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                return resultSet.next() && resultSet.getInt(1) > 0;
-            }
-        }
+        return SchemaCache.columnExists(tableName, columnName);
     }
 
     private String getSafeString(ResultSet resultSet, String column) {

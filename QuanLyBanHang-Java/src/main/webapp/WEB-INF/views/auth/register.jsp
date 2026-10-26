@@ -11,6 +11,7 @@
     <h2>Đăng ký tài khoản</h2>
     <%@ include file="/WEB-INF/views/auth/auth-messages.jspf" %>
     <form method="post" action="${pageContext.request.contextPath}/register" autocomplete="off">
+        <input type="hidden" name="_csrf" value="${csrfToken}">
         <input type="text" name="ten_nv" placeholder="Tên nhân viên" value="${ten_nv}" required>
         <input type="text" name="username" placeholder="Tên đăng nhập" value="${username}" required>
         <input type="email" name="email" placeholder="Email" value="${email}" required>

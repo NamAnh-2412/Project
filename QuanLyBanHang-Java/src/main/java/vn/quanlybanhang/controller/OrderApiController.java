@@ -10,6 +10,7 @@ import vn.quanlybanhang.service.OrderService.CreateOrderResult;
 import vn.quanlybanhang.service.OrderService.MultipleOrderResult;
 import vn.quanlybanhang.util.JsonUtil;
 import vn.quanlybanhang.util.RequestUtil;
+import vn.quanlybanhang.util.SessionUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -69,7 +70,9 @@ public class OrderApiController extends BaseApiController {
                 RequestUtil.paramOrEmpty(request, "items"),
                 RequestUtil.paramOrEmpty(request, "ten_khachhang"),
                 RequestUtil.paramOrEmpty(request, "sdt_khachhang"),
-                RequestUtil.paramOrEmpty(request, "phuong_thuc_thanhtoan"));
+                RequestUtil.paramOrEmpty(request, "phuong_thuc_thanhtoan"),
+                SessionUtil.getCurrentUserId(request),
+                RequestUtil.paramOrEmpty(request, "ma_giam"));
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("message", result.message());
@@ -86,7 +89,8 @@ public class OrderApiController extends BaseApiController {
 
     private void createBatch(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException {
-        MultipleOrderResult result = orderService.processBatchCreate(RequestUtil.paramOrEmpty(request, "orders"));
+        MultipleOrderResult result = orderService.processBatchCreate(
+                RequestUtil.paramOrEmpty(request, "orders"), SessionUtil.getCurrentUserId(request));
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("message", result.message());

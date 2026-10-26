@@ -69,4 +69,11 @@ public final class RequestUtil {
         String accept = request.getHeader("Accept");
         return accept != null && accept.contains("application/json");
     }
+
+    public static boolean isApiRequest(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        String contextPath = request.getContextPath();
+        String path = uri.startsWith(contextPath) ? uri.substring(contextPath.length()) : uri;
+        return path.startsWith("/api/") || wantsJson(request);
+    }
 }

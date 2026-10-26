@@ -12,6 +12,22 @@ function apiBase(config: OrderCreateConfig): string {
   return base.endsWith('/') ? base : `${base}/`;
 }
 
+export function publishDisplay(config: OrderCreateConfig, cart: CartItem[], total: number) {
+  const lines = cart.map((item) => ({
+    ten: item.ten + (item.size ? ` (${item.size})` : ''),
+    sl: item.sl,
+    tien: item.gia * item.sl,
+  }));
+  const body = new URLSearchParams();
+  body.set('payload', JSON.stringify({ lines, tong: total }));
+  fetch(`${apiBase(config)}api/cfd`, {
+    method: 'POST',
+    body,
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+  }).catch(() => undefined);
+}
+
 async function parseJson<T>(response: Response): Promise<T> {
   const text = await response.text();
   if (text.trim().startsWith('<')) {
@@ -91,13 +107,14 @@ export interface SubmitOrderPayload {
   ten_khachhang: string;
   sdt_khachhang: string;
   phuong_thuc_thanhtoan?: string;
+  ma_giam?: string;
 }
 
 export async function submitOrder(
   config: OrderCreateConfig,
   payload: SubmitOrderPayload,
   normalizedItems: CartItem[],
-): Promise<{ redirect: string; message: string }> {
+): Promise<{ redirect: string; message: string; offline?: boolean }> {
   const params = new URLSearchParams();
   params.append('action', payload.action);
   params.append('items', JSON.stringify(normalizedItems));
@@ -105,6 +122,9 @@ export async function submitOrder(
   params.append('sdt_khachhang', payload.sdt_khachhang || '');
   if (payload.phuong_thuc_thanhtoan) {
     params.append('phuong_thuc_thanhtoan', payload.phuong_thuc_thanhtoan);
+  }
+  if (payload.ma_giam) {
+    params.append('ma_giam', payload.ma_giam);
   }
 
   const response = await fetch(`${apiBase(config)}api/don-hang/create`, {
@@ -116,7 +136,20 @@ export async function submitOrder(
       Accept: 'application/json',
       'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
     },
+  }).catch(() => {
+    const queue = JSON.parse(localStorage.getItem('qlbh_offline_orders') || '[]');
+    queue.push(params.toString());
+    localStorage.setItem('qlbh_offline_orders', JSON.stringify(queue));
+    return null;
   });
+
+  if (!response) {
+    return {
+      redirect: '',
+      message: 'Mất mạng. Đơn đã lưu trên máy và sẽ gửi khi có mạng.',
+      offline: true,
+    };
+  }
 
   const data = await parseJson<{
     success: boolean;
@@ -132,5 +165,25 @@ export async function submitOrder(
   return {
     redirect: data.redirect || config.orderListUrl,
     message: data.message || 'Thành công.',
+    offline: false,
   };
+}
+
+export async function previewVoucher(
+  config: OrderCreateConfig,
+  code: string,
+  gross: number,
+): Promise<{ ma: string; giam: number }> {
+  const params = new URLSearchParams();
+  params.set('ma', code);
+  params.set('tong', String(gross));
+  const response = await fetch(`${apiBase(config)}api/ma-giam-gia/kiem-tra?${params.toString()}`, {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  const data = await parseJson<{ success: boolean; ma?: string; giam?: number; error?: string }>(response);
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || 'Mã giảm giá không dùng được.');
+  }
+  return { ma: data.ma || code, giam: Number(data.giam || 0) };
 }

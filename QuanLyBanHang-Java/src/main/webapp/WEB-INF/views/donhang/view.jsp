@@ -113,12 +113,34 @@
                         </c:otherwise>
                     </c:choose>
 
+                    <c:if test="${order.giamGia > 0}">
+                        <div class="order-detail-total">
+                            <span>Giảm ${order.maGiam}</span>
+                            <strong>-<fmt:formatNumber value="${order.giamGia}" pattern="#,##0" />đ</strong>
+                        </div>
+                    </c:if>
                     <div class="order-detail-total">
                         <span>Tổng tiền đơn hàng</span>
                         <strong><fmt:formatNumber value="${order.thanhTien}" pattern="#,##0" />đ</strong>
                     </div>
+                    <c:if test="${order.phuongThucThanhToan == 'chuyen_khoan' && transferQr.ready}">
+                        <div style="text-align:center;margin-top:16px;">
+                            <img src="${transferQr.imageUrl}" alt="QR chuyển khoản" style="width:180px;height:auto;">
+                            <div>Nội dung: <b>${transferQr.content}</b></div>
+                        </div>
+                    </c:if>
 
                     <div class="order-detail-actions">
+                        <a href="${pageContext.request.contextPath}/don-hang/in?id=${order.id}" class="btn btn-secondary">
+                            <i class="fas fa-print"></i> In hóa đơn
+                        </a>
+                        <form method="post" action="${pageContext.request.contextPath}/don-hang/hoa-don" style="display:inline;">
+                            <input type="hidden" name="id" value="${order.id}">
+                            <button class="btn btn-secondary" type="submit">Xuất hóa đơn điện tử</button>
+                        </form>
+                        <c:if test="${not empty invoice}">
+                            <span class="muted">${invoice.ghiChu}</span>
+                        </c:if>
                         <c:if test="${canPayOrder}">
                             <a href="${pageContext.request.contextPath}/don-hang/pay?id=${order.id}" class="btn btn-pay-order">
                                 <i class="fas fa-credit-card"></i> Thanh toán

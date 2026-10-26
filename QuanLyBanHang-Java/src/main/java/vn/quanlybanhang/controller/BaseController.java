@@ -37,6 +37,9 @@ public abstract class BaseController extends HttpServlet {
         if (pageHeaderIcon != null && !pageHeaderIcon.isBlank()) {
             request.setAttribute("pageHeaderIcon", pageHeaderIcon);
         }
+        if (headerSubtitle != null && !headerSubtitle.isBlank()) {
+            request.setAttribute("headerSubtitle", headerSubtitle);
+        }
         if (extraCss != null && !extraCss.isEmpty()) {
             request.setAttribute("extraCss", extraCss);
         }

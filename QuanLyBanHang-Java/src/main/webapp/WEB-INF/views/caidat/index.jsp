@@ -106,6 +106,30 @@
                                     <label class="form-label">Email</label>
                                     <input type="email" name="email" class="form-input" value="${settings.email}">
                                 </div>
+                                <h3 class="section-title" style="margin-top:18px;"><i class="fas fa-qrcode"></i> QR chuyển khoản</h3>
+                                <div class="form-group">
+                                    <label class="form-label">Ngân hàng</label>
+                                    <select name="bank_bin" class="form-input" id="bankBin">
+                                        <option value="">Chưa dùng QR</option>
+                                        <option value="970422" data-name="MB Bank">MB Bank</option>
+                                        <option value="970436" data-name="Vietcombank">Vietcombank</option>
+                                        <option value="970407" data-name="Techcombank">Techcombank</option>
+                                        <option value="970416" data-name="ACB">ACB</option>
+                                        <option value="970432" data-name="VPBank">VPBank</option>
+                                        <option value="970418" data-name="BIDV">BIDV</option>
+                                        <option value="970405" data-name="Agribank">Agribank</option>
+                                        <option value="970423" data-name="TPBank">TPBank</option>
+                                    </select>
+                                    <input type="hidden" name="bank_name" id="bankName" value="${settings.bank_name}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Số tài khoản</label>
+                                    <input type="text" name="bank_account_number" class="form-input" value="${settings.bank_account_number}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Chủ tài khoản</label>
+                                    <input type="text" name="bank_account_name" class="form-input" value="${settings.bank_account_name}">
+                                </div>
                                 <div class="form-group">
                                     <label class="form-label">Chữ viết tắt logo</label>
                                     <input type="text" name="chu_logo_quan" class="form-input" value="${settings.chu_logo_quan}" maxlength="6" placeholder="Ví dụ: CG">
@@ -248,6 +272,21 @@
                     </div>
                 </div>
             </div>
+<script>
+    (function () {
+        var select = document.getElementById('bankBin');
+        var name = document.getElementById('bankName');
+        if (!select || !name) return;
+        var saved = '${settings.bank_bin}';
+        if (saved) select.value = saved;
+        function sync() {
+            var option = select.options[select.selectedIndex];
+            name.value = option && option.getAttribute('data-name') ? option.getAttribute('data-name') : '';
+        }
+        select.addEventListener('change', sync);
+        sync();
+    })();
+</script>
 <%@ include file="/WEB-INF/views/layout/app-shell-end.jspf" %>
 </body>
 </html>

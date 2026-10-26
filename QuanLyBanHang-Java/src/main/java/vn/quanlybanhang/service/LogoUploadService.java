@@ -3,7 +3,6 @@ package vn.quanlybanhang.service;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.UUID;
@@ -27,12 +26,18 @@ public class LogoUploadService {
             return Map.of("success", false, "error", "File tải lên phải là hình ảnh");
         }
 
-        String extension = getExtension(part);
+        ImageFiles.Prepared image;
+        try {
+            image = ImageFiles.prepare(part);
+        } catch (IOException ex) {
+            return Map.of("success", false, "error", ex.getMessage());
+        }
+
         Path uploadDir = UploadConfig.getShopUploadDir();
         Files.createDirectories(uploadDir);
-        String fileName = "logo-" + UUID.randomUUID() + extension;
+        String fileName = "logo-" + UUID.randomUUID() + image.extension();
         Path target = uploadDir.resolve(fileName);
-        Files.copy(part.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+        Files.write(target, image.bytes());
 
         String relativePath = UploadConfig.toStoredPath(target);
         settingsDao.setSetting("logo_path", relativePath);
@@ -45,13 +50,5 @@ public class LogoUploadService {
 
     public void clearLogo() throws SQLException {
         settingsDao.setSetting("logo_path", "");
-    }
-
-    private static String getExtension(Part part) {
-        String submitted = part.getSubmittedFileName();
-        if (submitted == null || !submitted.contains(".")) {
-            return ".png";
-        }
-        return submitted.substring(submitted.lastIndexOf('.'));
     }
 }

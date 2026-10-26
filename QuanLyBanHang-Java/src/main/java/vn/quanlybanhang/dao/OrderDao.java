@@ -87,7 +87,8 @@ public class OrderDao extends BaseDao {
 
     public int insertOrder(Connection connection, DonHang order) throws SQLException {
         String sql = "INSERT INTO donhang (ma_donhang, khachhang_id, tong_tien, giam_gia, thanh_tien, phuong_thuc_thanhtoan, "
-                + "hinh_thuc_nhan, trang_thai, sdt_khachhang, ten_khachhang) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "hinh_thuc_nhan, trang_thai, sdt_khachhang, ten_khachhang, nhanvien_id, ma_giam) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, order.getMaDonHang());
             if (order.getKhachHangId() != null) {
@@ -103,6 +104,12 @@ public class OrderDao extends BaseDao {
             statement.setString(8, order.getTrangThai());
             statement.setString(9, order.getSdtKhachHang());
             statement.setString(10, order.getTenKhachHang());
+            if (order.getNhanVienId() == null) {
+                statement.setObject(11, null);
+            } else {
+                statement.setInt(11, order.getNhanVienId());
+            }
+            statement.setString(12, order.getMaGiam());
             statement.executeUpdate();
 
             try (ResultSet keys = statement.getGeneratedKeys()) {
@@ -154,6 +161,36 @@ public class OrderDao extends BaseDao {
             statement.setString(4, choice.getTenNhom());
             statement.setString(5, choice.getTenLuaChon());
             statement.setBigDecimal(6, choice.getGiaTangThem());
+            statement.executeUpdate();
+        }
+    }
+
+    public void markForKitchen(Connection connection, int orderId) throws SQLException {
+        String orderSql = "UPDATE donhang SET trang_thai_bep = 'cho_lam', "
+                + "nguon_don = IFNULL(nguon_don, 'tai_quay') WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(orderSql)) {
+            statement.setInt(1, orderId);
+            statement.executeUpdate();
+        }
+        String itemSql = "UPDATE chitiet_donhang SET trang_thai_bep = 'cho_lam' "
+                + "WHERE donhang_id = ? AND trang_thai_bep IS NULL";
+        try (PreparedStatement statement = connection.prepareStatement(itemSql)) {
+            statement.setInt(1, orderId);
+            statement.executeUpdate();
+        }
+    }
+
+    public void stampStaffAndVoucher(Connection connection, int orderId, Integer staffId, String voucherCode)
+            throws SQLException {
+        String sql = "UPDATE donhang SET nhanvien_id = ?, ma_giam = ? WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            if (staffId == null) {
+                statement.setObject(1, null);
+            } else {
+                statement.setInt(1, staffId);
+            }
+            statement.setString(2, voucherCode);
+            statement.setInt(3, orderId);
             statement.executeUpdate();
         }
     }
@@ -273,7 +310,31 @@ public class OrderDao extends BaseDao {
         if (createdAt != null) {
             order.setNgayTao(createdAt.toLocalDateTime());
         }
+        order.setNhanVienId(optionalInt(resultSet, "nhanvien_id"));
+        order.setMaGiam(optionalString(resultSet, "ma_giam"));
         return order;
+    }
+
+    private String optionalString(ResultSet resultSet, String column) throws SQLException {
+        var meta = resultSet.getMetaData();
+        for (int i = 1; i <= meta.getColumnCount(); i++) {
+            if (column.equalsIgnoreCase(meta.getColumnLabel(i))) {
+                return resultSet.getString(column);
+            }
+        }
+        return null;
+    }
+
+    private Integer optionalInt(ResultSet resultSet, String column) throws SQLException {
+        String value = optionalString(resultSet, column);
+        if (value == null || value.isBlank() || resultSet.wasNull()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(value);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private void bind(PreparedStatement statement, List<Object> params) throws SQLException {

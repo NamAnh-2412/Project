@@ -40,13 +40,14 @@ public class OrderService {
     private final ProductDao productDao = new ProductDao();
     private final DanhMucDao danhMucDao = new DanhMucDao();
     private final SettingsService settingsService = new SettingsService();
+    private final VoucherService voucherService = new VoucherService();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Random random = new Random();
 
     public record MultipleOrderResult(boolean success, int count, String message, List<String> errors) {
     }
 
-    public record CreateOrderResult(boolean success, String message, String redirectPath) {
+    public record CreateOrderResult(boolean success, String message, String redirectPath, int orderId) {
     }
 
     public record CreatePageData(List<DanhMuc> categories, Integer activeCat, List<Product> products,
@@ -147,23 +148,25 @@ public class OrderService {
     }
 
     public CreateOrderResult processSingleCreate(String action, String itemsJson, String customerName,
-            String customerPhone, String paymentMethod) throws SQLException {
+            String customerPhone, String paymentMethod, Integer staffId, String voucherCode) throws SQLException {
         if (itemsJson == null || itemsJson.isBlank()) {
-            return new CreateOrderResult(false, "Không nhận được dữ liệu giỏ hàng.", "/don-hang/create");
+            return new CreateOrderResult(false, "Không nhận được dữ liệu giỏ hàng.", "/don-hang/create", 0);
         }
         List<IncomingOrderItem> incomingItems = parseItems(itemsJson);
         if (incomingItems.isEmpty()) {
-            return new CreateOrderResult(false, "Dữ liệu giỏ hàng không hợp lệ.", "/don-hang/create");
+            return new CreateOrderResult(false, "Dữ liệu giỏ hàng không hợp lệ.", "/don-hang/create", 0);
         }
 
         DonHang order = buildOrderFromItems(incomingItems);
         order.setTenKhachHang(defaultCustomerName(customerName));
         order.setSdtKhachHang(customerPhone);
+        order.setNhanVienId(staffId);
+        order.setMaGiam(VoucherService.normalizeCode(voucherCode));
 
         if ("save_pending_order".equals(action)) {
             order.setMaDonHang(generateSingleOrderCode());
             createPendingOrder(order);
-            return new CreateOrderResult(true, "Đã lưu đơn chờ xử lý.", "/don-hang");
+            return new CreateOrderResult(true, "Đã lưu đơn chờ xử lý.", "/don-hang/pay?id=" + order.getId(), order.getId());
         }
 
         order.setMaDonHang(generateSingleOrderCode());
@@ -174,10 +177,13 @@ public class OrderService {
         }
         order.setPhuongThucThanhToan(validatePaymentMethod(resolvedPayment));
         createOrder(order);
-        return new CreateOrderResult(true, "Tạo đơn hàng thành công.", "/don-hang");
+        String redirect = AppConstants.PAYMENT_BANK.equals(order.getPhuongThucThanhToan())
+                ? "/don-hang/in?id=" + order.getId()
+                : "/don-hang";
+        return new CreateOrderResult(true, "Tạo đơn hàng thành công.", redirect, order.getId());
     }
 
-    public MultipleOrderResult processBatchCreate(String ordersJson) throws SQLException {
+    public MultipleOrderResult processBatchCreate(String ordersJson, Integer staffId) throws SQLException {
         if (ordersJson == null || ordersJson.isBlank()) {
             return new MultipleOrderResult(false, 0, "Không nhận được danh sách đơn hàng.", List.of());
         }
@@ -199,6 +205,8 @@ public class OrderService {
             order.setTenKhachHang(defaultCustomerName(batch.ten_khachhang));
             order.setSdtKhachHang(batch.sdt_khachhang == null ? "" : batch.sdt_khachhang);
             order.setPhuongThucThanhToan(validatePaymentMethod(batch.phuong_thuc_thanhtoan));
+            order.setNhanVienId(staffId);
+            order.setMaGiam(VoucherService.normalizeCode(batch.ma_giam));
             orders.add(order);
         }
 
@@ -221,7 +229,7 @@ public class OrderService {
         return Optional.empty();
     }
 
-    public Optional<String> completeOrderById(int id, String paymentMethod) throws SQLException {
+    public Optional<String> completeOrderById(int id, String paymentMethod, Integer staffId) throws SQLException {
         Optional<DonHang> order = orderDao.findById(id);
         if (order.isEmpty()) {
             return Optional.of("Không tìm thấy đơn hàng.");
@@ -230,7 +238,7 @@ public class OrderService {
         if (accessError.isPresent()) {
             return accessError;
         }
-        completePendingOrder(order.get(), validatePaymentMethod(paymentMethod));
+        completePendingOrder(order.get(), validatePaymentMethod(paymentMethod), staffId);
         return Optional.empty();
     }
 
@@ -346,10 +354,12 @@ public class OrderService {
         order.setPhuongThucThanhToan(normalizePaymentMethod(order.getPhuongThucThanhToan()));
         BigDecimal total = calculateTotal(order.getItems());
         order.setTongTien(total);
-        order.setThanhTien(total);
+        BigDecimal discount = order.getGiamGia().min(total).max(BigDecimal.ZERO);
+        order.setGiamGia(discount);
+        order.setThanhTien(total.subtract(discount));
     }
 
-    public void completePendingOrder(DonHang order, String paymentMethod) throws SQLException {
+    public void completePendingOrder(DonHang order, String paymentMethod, Integer staffId) throws SQLException {
         try (Connection connection = DatabaseConfig.getDataSource().getConnection()) {
             connection.setAutoCommit(false);
             try {
@@ -364,6 +374,10 @@ public class OrderService {
                 }
                 String normalizedPayment = normalizePaymentMethod(paymentMethod);
                 orderDao.completePendingOrder(connection, order.getId(), normalizedPayment, order.getTrangThai());
+                if (order.getNhanVienId() == null) {
+                    order.setNhanVienId(staffId);
+                }
+                orderDao.stampStaffAndVoucher(connection, order.getId(), order.getNhanVienId(), order.getMaGiam());
                 order.setPhuongThucThanhToan(normalizedPayment);
                 order.setTrangThai(AppConstants.ORDER_STATUS_COMPLETED);
                 resolveCustomerForCompletedOrder(connection, order, order.getId());
@@ -382,6 +396,7 @@ public class OrderService {
             connection.setAutoCommit(false);
             try {
                 orderDao.cancelOrder(connection, order.getId());
+                voucherService.release(connection, order.getMaGiam());
                 if (order.getKhachHangId() != null && AppConstants.ORDER_STATUS_COMPLETED.equals(order.getTrangThai())) {
                     khachHangDao.reverseCustomerSpendingOnCancel(connection, order.getKhachHangId(), order.getThanhTien());
                     khachHangDao.recalculateCustomerRank(connection, order.getKhachHangId());
@@ -465,7 +480,17 @@ public class OrderService {
 
     private void persistOrderInConnection(Connection connection, DonHang order, boolean updateCustomerStats)
             throws SQLException {
+        BigDecimal total = order.getTongTien() == null ? calculateTotal(order.getItems()) : order.getTongTien();
+        BigDecimal discount = voucherService.consume(connection, order.getMaGiam(), total);
+        order.setTongTien(total);
+        order.setGiamGia(discount);
+        order.setThanhTien(total.subtract(discount));
+        if (discount.signum() == 0) {
+            order.setMaGiam(null);
+        }
         int orderId = orderDao.insertOrder(connection, order);
+        order.setId(orderId);
+        orderDao.stampStaffAndVoucher(connection, orderId, order.getNhanVienId(), order.getMaGiam());
         if (updateCustomerStats) {
             resolveCustomerForCompletedOrder(connection, order, orderId);
         } else {
@@ -480,6 +505,7 @@ public class OrderService {
                 }
             }
         }
+        orderDao.markForKitchen(connection, orderId);
     }
 
     private void linkExistingCustomer(Connection connection, DonHang order, int orderId) throws SQLException {
@@ -598,6 +624,7 @@ public class OrderService {
         public String ten_khachhang;
         public String sdt_khachhang;
         public String phuong_thuc_thanhtoan;
+        public String ma_giam;
         public List<IncomingOrderItem> items = new ArrayList<>();
     }
 

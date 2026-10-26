@@ -1,0 +1,245 @@
+/* ===== layout.css ===== */
+/* Common Layout Styles - Dùng chung cho tất cả các trang có sidebar */
+
+body, html { 
+  margin: 0; 
+  padding: 0; 
+  background: #f8fafc; 
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.app-wrapper { 
+  display: flex; 
+  min-height: 100vh; 
+}
+
+.main-content {
+  flex: 1; 
+  margin-left: 250px; 
+  min-height: 100vh; 
+  background: #f8fafc;
+  padding: 20px 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  width: calc(100% - 250px);
+  max-width: calc(100% - 250px);
+}
+
+.main-inner { 
+  max-width: 100% !important; 
+  width: 100% !important; 
+  margin: 0 !important; 
+  padding: 0 !important; 
+  box-sizing: border-box; 
+}
+
+.header-bar { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 32px; 
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 32px;
+  padding-right: 20px;
+  background: none; 
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+.header-bar h2 { 
+  font-size: 2.2rem; 
+  color: #22334b; 
+  font-weight: 700; 
+  letter-spacing: 0.02em; 
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-bar h2 i {
+  color: #f97316;
+  font-size: 1.8rem;
+}
+
+.accbox { 
+  display: flex; 
+  align-items: center; 
+  background: #fff; 
+  border-radius: 20px; 
+  box-shadow: 0 2px 10px rgba(44,62,80,0.04); 
+  padding: 13px 30px; 
+}
+
+.acc-ava { 
+  background: linear-gradient(135deg, #f97316, #fb923c); 
+  color: #fff; 
+  border-radius: 50%; 
+  width: 52px; 
+  height: 52px; 
+  display: flex;
+  align-items: center;
+  justify-content: center; 
+  font-weight: bold; 
+  font-size: 1.2rem; 
+  margin-right: 16px; 
+}
+
+.accbox-name { 
+  color: #22334b; 
+  font-size: 1.17rem; 
+  font-weight: 500; 
+}
+
+.content-card { 
+  background: #fff; 
+  border-radius: 18px; 
+  box-shadow: 0 2px 8px rgba(44,62,80,0.07); 
+  padding: 32px 32px; 
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  overflow-x: auto;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Đảm bảo content-card trong các trang table chiếm full width */
+.content-card table {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  display: table;
+}
+
+.content-card h1 { 
+  font-size: 24px; 
+  margin-bottom: 20px; 
+  color: #22334b; 
+}
+
+.main-link { 
+  display: inline-block; 
+  background: linear-gradient(135deg, #f97316, #fb923c); 
+  color: #fff; 
+  padding: 10px 20px; 
+  border-radius: 8px; 
+  text-decoration: none; 
+  font-weight: 600; 
+  margin-bottom: 20px; 
+}
+
+.main-link:hover { 
+  transform: translateY(-2px); 
+  box-shadow: 0 4px 12px rgba(249,115,22,0.3); 
+}
+
+table { 
+  width: 100% !important; 
+  min-width: 100% !important;
+  max-width: 100% !important;
+  border-collapse: collapse; 
+  margin-top: 20px; 
+  table-layout: auto;
+}
+
+table th, table td { 
+  padding: 12px; 
+  text-align: left; 
+  border-bottom: 1px solid #e5e7eb; 
+}
+
+table th { 
+  background: #f8fafc; 
+  font-weight: 600; 
+  color: #22334b; 
+}
+
+table tr:hover { 
+  background: #f8fafc; 
+}
+
+table a { 
+  color: #f97316; 
+  text-decoration: none; 
+  font-weight: 500; 
+}
+
+table a:hover { 
+  text-decoration: underline; 
+}
+
+/* Responsive - Giống dashboard.css */
+@media (max-width: 1450px) {
+  .main-inner {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 1250px) {
+  .main-inner {
+    padding: 0;
+  }
+  
+  .header-bar {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  
+  .content-card {
+    padding: 24px 24px;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+/* Đảm bảo table và content luôn chiếm full width */
+.content-card table {
+  width: 100%;
+  min-width: 100%;
+}
+
+.content-card > * {
+  max-width: 100%;
+}
+
+/* Đảm bảo form và các elements trong content-card không bị giới hạn */
+.content-card form {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Đảm bảo stats-row và các grid layouts chiếm full width */
+.content-card .stats-row {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Override các CSS khác có thể conflict */
+.app-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Đảm bảo không có khoảng trắng bên phải */
+* {
+  box-sizing: border-box;
+}
+
+/* Force full width cho tất cả elements trong main-inner */
+.main-inner > * {
+  max-width: 100% !important;
+}
+
+/* Đảm bảo header-bar và accbox ra sát rìa */
+.header-bar .accbox {
+  margin-right: 0 !important;
+}
+
+
+

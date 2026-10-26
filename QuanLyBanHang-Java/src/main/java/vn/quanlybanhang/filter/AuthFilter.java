@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.Set;
 
 import vn.quanlybanhang.service.SettingsService;
+import vn.quanlybanhang.util.RequestUtil;
 import vn.quanlybanhang.util.SessionUtil;
 import vn.quanlybanhang.util.ViewUtil;
 
@@ -44,14 +45,14 @@ public class AuthFilter implements Filter {
         String contextPath = httpRequest.getContextPath();
         String path = httpRequest.getRequestURI().substring(contextPath.length());
 
-        if (isPublicPath(path)) {
+        if (isPublicPath(httpRequest, path)) {
             ViewUtil.applySharedAttributes(httpRequest);
             chain.doFilter(request, response);
             return;
         }
 
         if (!SessionUtil.isLoggedIn(httpRequest)) {
-            httpResponse.sendRedirect(contextPath + "/login");
+            rejectUnauthenticated(httpRequest, httpResponse, false);
             return;
         }
 
@@ -59,7 +60,7 @@ public class AuthFilter implements Filter {
             int timeoutMinutes = settingsService.getSessionTimeoutMinutes();
             if (SessionUtil.isSessionTimedOut(httpRequest, timeoutMinutes)) {
                 SessionUtil.logout(httpRequest);
-                httpResponse.sendRedirect(contextPath + "/login?timeout=1");
+                rejectUnauthenticated(httpRequest, httpResponse, true);
                 return;
             }
         } catch (SQLException ex) {
@@ -71,14 +72,30 @@ public class AuthFilter implements Filter {
         chain.doFilter(request, response);
     }
 
-    private boolean isPublicPath(String path) {
-        if (path.startsWith("/assets/")) {
+    private void rejectUnauthenticated(HttpServletRequest request, HttpServletResponse response, boolean timeout)
+            throws IOException {
+        if (RequestUtil.isApiRequest(request)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write(
+                    "{\"success\":false,\"error\":\"Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.\",\"code\":\"UNAUTHORIZED\"}");
+            return;
+        }
+        String target = timeout ? "/login?timeout=1" : "/login";
+        response.sendRedirect(request.getContextPath() + target);
+    }
+
+    private boolean isPublicPath(HttpServletRequest request, String path) {
+        if (path.startsWith("/assets/") || path.startsWith("/js/") || path.startsWith("/uploads/")) {
             return true;
         }
-        if (path.startsWith("/js/")) {
+        if (path.startsWith("/goi-mon") || path.startsWith("/api/public/") || path.startsWith("/man-hinh-phu")) {
             return true;
         }
-        if (path.startsWith("/uploads/")) {
+        if ("/api/integrations/delivery-webhook".equals(path)) {
+            return true;
+        }
+        if ("/api/cfd".equals(path) && "GET".equalsIgnoreCase(request.getMethod())) {
             return true;
         }
         return PUBLIC_PATHS.contains(path);

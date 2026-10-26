@@ -1,6 +1,23 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="cp" value="${pageContext.request.contextPath}" scope="page"/>
-<link rel="stylesheet" href="${cp}/assets/css/core.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/style.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/layout.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/loading.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/animations.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/empty-states.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/forms.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/tables.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/micro-interactions.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/ui.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/dark-mode.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/jsp-bridge.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/customers.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/dashboard.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/inventory.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/reports.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/employees.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/shell.css"/>
+<link rel="stylesheet" href="${cp}/assets/css/modules.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
 <c:if test="${not empty extraCss}">
     <c:forEach var="sheet" items="${extraCss}">
@@ -8,4 +25,24 @@
     </c:forEach>
 </c:if>
 <script>window.APP_BASE_PATH = '${cp}/';</script>
-<script defer src="${cp}/js/core.js"></script>
+<%@ include file="/WEB-INF/views/layout/csrf-client.jspf" %>
+<script defer src="${cp}/js/utils/toast.js"></script>
+<script defer src="${cp}/js/utils/sidebar.js"></script>
+<script defer src="${cp}/js/utils/alerts.js"></script>
+<script defer src="${cp}/js/utils/animations.js"></script>
+<script defer src="${cp}/js/utils/forms.js"></script>
+<script defer src="${cp}/js/utils/tables.js"></script>
+<script defer src="${cp}/js/utils/micro-interactions.js"></script>
+<script defer src="${cp}/js/utils/dark-mode.js"></script>
+<script defer src="${cp}/js/utils/confirm.js"></script>
+<script defer src="${cp}/js/utils/clipboard.js"></script>
+<script defer src="${cp}/js/utils/keyboard.js"></script>
+<script defer src="${cp}/js/forms/money-format.js"></script>
+<script defer src="${cp}/js/forms/loading.js"></script>
+<script defer src="${cp}/js/forms/validation.js"></script>
+<script defer src="${cp}/js/tables/search.js"></script>
+<script defer src="${cp}/js/tables/sort.js"></script>
+<script defer src="${cp}/js/tables/pagination.js"></script>
+<script defer src="${cp}/js/tables/export.js"></script>
+<script defer src="${cp}/js/print/print.js"></script>
+<script defer src="${cp}/js/offline-sync.js"></script>

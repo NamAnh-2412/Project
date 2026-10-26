@@ -15,5 +15,5 @@
     </div>
 </div>
 <c:if test="${not empty headerSubtitle}">
-    <p class="page-subtitle" style="margin:-12px 0 20px 32px;color:#64748b;font-size:15px;">${headerSubtitle}</p>
+    <p class="page-subtitle">${headerSubtitle}</p>
 </c:if>

@@ -5,4 +5,5 @@
 <title>${pageTitle}</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/auth.css"/>
 <script>window.APP_BASE_PATH = '${pageContext.request.contextPath}/';</script>
+<%@ include file="/WEB-INF/views/layout/csrf-client.jspf" %>
 <script defer src="${pageContext.request.contextPath}/js/auth.js"></script>

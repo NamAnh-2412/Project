@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import vn.quanlybanhang.model.Product;
+import vn.quanlybanhang.service.ImageFiles;
 import vn.quanlybanhang.service.ProductImageUploadService;
 import vn.quanlybanhang.service.ProductService;
 import vn.quanlybanhang.service.ProductService.ChoiceLinkPageData;
@@ -27,7 +28,7 @@ import jakarta.servlet.http.Part;
         "/san-pham/lien-ket-lua-chon",
         "/api/product-image-upload"
 })
-@MultipartConfig
+@MultipartConfig(maxFileSize = ImageFiles.MAX_BYTES, maxRequestSize = ImageFiles.MAX_BYTES + 1_048_576L)
 public class ProductController extends BaseController {
 
     private static final long serialVersionUID = 1L;
@@ -134,13 +135,17 @@ public class ProductController extends BaseController {
 
     private void uploadProductImage(HttpServletRequest request, HttpServletResponse response)
             throws IOException, ServletException, SQLException {
-        int productId = getIntParameter(request, "product_id", 0);
-        Part part = request.getPart("anh_url");
-        if (part == null) {
-            part = request.getPart("product_image");
+        try {
+            int productId = getIntParameter(request, "product_id", 0);
+            Part part = request.getPart("anh_url");
+            if (part == null) {
+                part = request.getPart("product_image");
+            }
+            Map<String, Object> result = productImageUploadService.uploadProductImage(part, productId, request.getContextPath());
+            JsonUtil.writeJson(response, result);
+        } catch (IllegalStateException ex) {
+            JsonUtil.writeJson(response, Map.of("success", false, "error", "Ảnh không được lớn hơn 5MB."));
         }
-        Map<String, Object> result = productImageUploadService.uploadProductImage(part, productId, request.getContextPath());
-        JsonUtil.writeJson(response, result);
     }
 
     private void save(HttpServletRequest request, HttpServletResponse response)

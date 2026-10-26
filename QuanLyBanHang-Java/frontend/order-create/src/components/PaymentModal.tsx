@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
+import { previewVoucher } from '../api';
 import { calcCartTotal, formatMoney, formatNumber } from '../utils';
-import type { CartItem } from '../types';
+import type { CartItem, OrderCreateConfig } from '../types';
 
 interface PaymentModalProps {
+  config: OrderCreateConfig;
   cart: CartItem[];
   onClose: () => void;
-  onConfirm: (method: string) => void;
+  onConfirm: (method: string, voucherCode: string) => void;
   submitting: boolean;
 }
 
@@ -18,19 +20,49 @@ const METHODS = [
 
 const QUICK_AMOUNTS = [10000, 20000, 50000, 100000, 200000, 500000];
 
-export function PaymentModal({ cart, onClose, onConfirm, submitting }: PaymentModalProps) {
+export function PaymentModal({ config, cart, onClose, onConfirm, submitting }: PaymentModalProps) {
   const [method, setMethod] = useState('tien_mat');
   const [customerPaid, setCustomerPaid] = useState('');
+  const [voucherInput, setVoucherInput] = useState('');
+  const [appliedCode, setAppliedCode] = useState('');
+  const [discount, setDiscount] = useState(0);
+  const [voucherError, setVoucherError] = useState('');
+  const [checkingVoucher, setCheckingVoucher] = useState(false);
   const total = useMemo(() => calcCartTotal(cart), [cart]);
+  const payable = Math.max(0, total - discount);
   const paidAmount = parseFloat(customerPaid.replace(/[^0-9]/g, '')) || 0;
-  const change = paidAmount - total;
+  const change = paidAmount - payable;
+
+  async function applyCode() {
+    const code = voucherInput.trim();
+    if (!code) {
+      setAppliedCode('');
+      setDiscount(0);
+      setVoucherError('');
+      return;
+    }
+    setCheckingVoucher(true);
+    try {
+      const quote = await previewVoucher(config, code, total);
+      setAppliedCode(quote.ma);
+      setVoucherInput(quote.ma);
+      setDiscount(quote.giam);
+      setVoucherError('');
+    } catch (error) {
+      setAppliedCode('');
+      setDiscount(0);
+      setVoucherError(error instanceof Error ? error.message : 'Mã giảm giá không dùng được.');
+    } finally {
+      setCheckingVoucher(false);
+    }
+  }
 
   function handleConfirm() {
-    if (method === 'tien_mat' && paidAmount < total) {
+    if (method === 'tien_mat' && paidAmount < payable) {
       alert('Số tiền khách trả không đủ!');
       return;
     }
-    onConfirm(method);
+    onConfirm(method, appliedCode);
   }
 
   return (
@@ -61,9 +93,34 @@ export function PaymentModal({ cart, onClose, onConfirm, submitting }: PaymentMo
           <div className="payment-right">
             <div className="payment-info">
               <div className="payment-row">
+                <span>Tạm tính</span>
+                <strong>{formatMoney(total)}</strong>
+              </div>
+              <div className="payment-row" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="text"
+                  value={voucherInput}
+                  placeholder="Mã giảm giá"
+                  onChange={(event) => setVoucherInput(event.target.value.toUpperCase())}
+                  style={{ flex: 1, padding: 8, border: '1px solid #d2d8ea', borderRadius: 6 }}
+                />
+                <button type="button" className="btn btn-secondary" disabled={checkingVoucher} onClick={applyCode}>
+                  {checkingVoucher ? '...' : 'Áp dụng'}
+                </button>
+              </div>
+              {voucherError && (
+                <div className="payment-row" style={{ color: '#f44336' }}>{voucherError}</div>
+              )}
+              {discount > 0 && (
+                <div className="payment-row">
+                  <span>Giảm {appliedCode}</span>
+                  <strong>-{formatMoney(discount)}</strong>
+                </div>
+              )}
+              <div className="payment-row">
                 <span>Tổng tiền (1)</span>
                 <strong id="paymentTotal" style={{ color: '#f44336' }}>
-                  {formatMoney(total)}
+                  {formatMoney(payable)}
                 </strong>
               </div>
               {method === 'tien_mat' && (

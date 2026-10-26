@@ -3,6 +3,7 @@ import {
   fetchCreateContext,
   fetchProductChoices,
   fetchProductSizes,
+  publishDisplay,
   resolveConfig,
   searchCustomers,
   submitOrder,
@@ -95,6 +96,13 @@ export function OrderCreateApp() {
 
   const cart = activeOrder?.cart ?? [];
   const cartTotal = calcCartTotal(cart);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      publishDisplay(config, cart, cartTotal);
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [config, cart, cartTotal]);
 
   const switchOrder = useCallback(
     (orderId: number) => {
@@ -234,6 +242,7 @@ export function OrderCreateApp() {
   const handleSubmit = async (
     action: 'create_order' | 'save_pending_order',
     paymentMethod?: string,
+    voucherCode?: string,
   ) => {
     if (!activeOrder || cart.length === 0) {
       alert('Vui lòng chọn ít nhất một sản phẩm');
@@ -256,10 +265,15 @@ export function OrderCreateApp() {
           ten_khachhang: activeOrder.ten_khachhang || 'Khách lẻ',
           sdt_khachhang: activeOrder.sdt_khachhang || '',
           phuong_thuc_thanhtoan: paymentMethod || activeOrder.phuong_thuc_thanhtoan,
+          ma_giam: voucherCode || '',
         },
         normalizeCartItems(cart),
       );
       removeSubmittedOrder(activeOrder.id);
+      if ('offline' in result && result.offline) {
+        alert(result.message);
+        return;
+      }
       window.location.href = result.redirect;
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Có lỗi khi lưu đơn hàng.');
@@ -695,12 +709,13 @@ export function OrderCreateApp() {
 
       {paymentOpen && (
         <PaymentModal
+          config={config}
           cart={cart}
           submitting={submitting}
           onClose={() => setPaymentOpen(false)}
-          onConfirm={(method) => {
+          onConfirm={(method, voucherCode) => {
             updateActiveOrder((order) => ({ ...order, phuong_thuc_thanhtoan: method }));
-            handleSubmit('create_order', method);
+            handleSubmit('create_order', method, voucherCode);
           }}
         />
       )}

@@ -18,7 +18,8 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @WebFilter({
         "/nhan-vien", "/nhan-vien/create", "/nhan-vien/edit", "/nhan-vien/delete", "/nhan-vien/change-role",
-        "/kho/approve", "/kho/kiem-kho/approve", "/caidat", "/api/logo-upload", "/api/logo-delete"
+        "/kho/approve", "/kho/kiem-kho/approve", "/caidat", "/api/logo-upload", "/api/logo-delete",
+        "/ma-giam-gia", "/ban", "/du-bao", "/chi-nhanh", "/mo-rong"
 })
 public class RoleFilter implements Filter {
 

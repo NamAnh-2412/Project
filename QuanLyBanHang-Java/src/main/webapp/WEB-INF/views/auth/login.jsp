@@ -11,6 +11,7 @@
     <h2>Đăng nhập</h2>
     <%@ include file="/WEB-INF/views/auth/auth-messages.jspf" %>
     <form method="post" action="${pageContext.request.contextPath}/login" autocomplete="off">
+        <input type="hidden" name="_csrf" value="${csrfToken}">
         <input type="text" name="username" placeholder="Tên đăng nhập" value="${username}" required>
         <div class="password-container">
             <input type="password" name="password" id="password" placeholder="Mật khẩu" required>

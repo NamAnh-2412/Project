@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import vn.quanlybanhang.config.SchemaCache;
 import vn.quanlybanhang.constants.AppConstants;
 
 public class ReportDao extends BaseDao {
@@ -153,39 +154,14 @@ public class ReportDao extends BaseDao {
     }
 
     public boolean hasPaymentMethod(String method) throws SQLException {
-        String sql = "SELECT COLUMN_TYPE FROM information_schema.COLUMNS "
-                + "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'donhang' AND COLUMN_NAME = 'phuong_thuc_thanhtoan'";
-        try (Connection connection = getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-            if (resultSet.next()) {
-                String columnType = resultSet.getString("COLUMN_TYPE");
-                return columnType != null && columnType.contains("'" + method + "'");
-            }
-            return false;
-        }
+        return SchemaCache.columnTypeContains("donhang", "phuong_thuc_thanhtoan", "'" + method + "'");
     }
 
     public boolean tableExists(String tableName) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?";
-        try (Connection connection = getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, tableName);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                return resultSet.next() && resultSet.getInt(1) > 0;
-            }
-        }
+        return SchemaCache.tableExists(tableName);
     }
 
     public boolean columnExists(String tableName, String columnName) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?";
-        try (Connection connection = getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, tableName);
-            statement.setString(2, columnName);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                return resultSet.next() && resultSet.getInt(1) > 0;
-            }
-        }
+        return SchemaCache.columnExists(tableName, columnName);
     }
 }

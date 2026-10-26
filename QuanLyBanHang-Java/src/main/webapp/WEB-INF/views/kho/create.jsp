@@ -121,7 +121,7 @@
 <%@ include file="/WEB-INF/views/layout/app-shell-end.jspf" %>
 
 <div id="addMaterialModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:12px;padding:24px;min-width:400px;max-width:90%;">
+    <div style="background:#fff;border-radius:12px;padding:24px;width:min(440px, calc(100vw - 32px));max-width:100%;">
         <h3 style="margin-top:0;margin-bottom:16px;color:#22334b;">Thêm nguyên liệu vào giỏ</h3>
         <form id="addMaterialForm">
             <input type="hidden" id="modal-material-id">

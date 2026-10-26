@@ -1,0 +1,252 @@
+/* ===== empty-states.css ===== */
+/* ============================================
+   EMPTY-STATES.CSS - Beautiful Empty States
+   ============================================ */
+
+/* ===== EMPTY STATE CONTAINER ===== */
+.empty-state {
+  text-align: center;
+  padding: 64px 32px;
+  color: var(--text-light, #64748b);
+  background: var(--bg-white, #ffffff);
+  border-radius: var(--radius-md, 12px);
+  margin: 24px 0;
+}
+
+/* Empty icon */
+.empty-icon {
+  font-size: 64px;
+  color: var(--border-medium, #cbd5e1);
+  margin-bottom: 24px;
+  opacity: 0.7;
+  display: inline-block;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Empty title */
+.empty-state h3 {
+  font-size: 20px;
+  color: var(--text-medium, #475569);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+/* Empty description */
+.empty-state p {
+  font-size: 15px;
+  color: var(--text-light, #64748b);
+  margin-bottom: 24px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+/* Empty CTA button */
+.empty-state .btn {
+  margin-top: 8px;
+}
+
+/* ===== EMPTY STATE VARIANTS ===== */
+
+/* Small empty state (cho trong cards) */
+.empty-state-small {
+  padding: 40px 24px;
+}
+
+.empty-state-small .empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.empty-state-small h3 {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.empty-state-small p {
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+/* Compact empty state (cho tables) */
+.empty-state-compact {
+  padding: 32px 20px;
+}
+
+.empty-state-compact .empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.empty-state-compact h3 {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.empty-state-compact p {
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+/* ===== TABLE EMPTY STATE ===== */
+/* Thay thế cho <tr><td colspan>...</td></tr> */
+.table-empty-state {
+  padding: 60px 20px !important;
+}
+
+.table-empty-state td {
+  padding: 0 !important;
+  border: none !important;
+}
+
+.table-empty-state .empty-state {
+  margin: 0;
+  padding: 40px 20px;
+  background: transparent;
+}
+
+.table-empty-state .empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.table-empty-state h3 {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.table-empty-state p {
+  font-size: 13px;
+  margin-bottom: 0;
+}
+
+/* ===== EMPTY STATE THEMES ===== */
+
+/* Success/Info theme */
+.empty-state-info .empty-icon {
+  color: var(--info-color, #3b82f6);
+}
+
+/* Warning theme */
+.empty-state-warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+}
+
+.empty-state-warning .empty-icon {
+  color: #ffc107;
+}
+
+.empty-state-warning h3 {
+  color: #856404;
+}
+
+.empty-state-warning p {
+  color: #856404;
+}
+
+/* Error theme */
+.empty-state-error {
+  background: #f8d7da;
+  border: 1px solid #dc3545;
+}
+
+.empty-state-error .empty-icon {
+  color: #dc3545;
+}
+
+.empty-state-error h3 {
+  color: #721c24;
+}
+
+.empty-state-error p {
+  color: #721c24;
+}
+
+/* ===== EMPTY STATE WITH ILLUSTRATION ===== */
+.empty-state-illustration {
+  position: relative;
+}
+
+.empty-illustration {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80px;
+  color: var(--border-medium, #cbd5e1);
+}
+
+/* ===== ANIMATIONS ===== */
+/* Fade in animation */
+.empty-state {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Icon pulse (optional) */
+.empty-icon-pulse {
+  animation: float 3s ease-in-out infinite, pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .empty-state {
+    padding: 48px 24px;
+  }
+
+  .empty-icon {
+    font-size: 56px;
+    margin-bottom: 20px;
+  }
+
+  .empty-state h3 {
+    font-size: 18px;
+  }
+
+  .empty-state p {
+    font-size: 14px;
+  }
+
+  .empty-illustration {
+    width: 150px;
+    height: 150px;
+    font-size: 60px;
+  }
+}
+
+
+

@@ -10,8 +10,11 @@ import vn.quanlybanhang.service.OrderService;
 import vn.quanlybanhang.service.OrderService.CreateOrderResult;
 import vn.quanlybanhang.service.OrderService.CreatePageData;
 import vn.quanlybanhang.service.OrderService.MultipleOrderResult;
+import vn.quanlybanhang.service.SettingsService;
+import vn.quanlybanhang.service.TransferQrService;
 import vn.quanlybanhang.util.JsonUtil;
 import vn.quanlybanhang.util.RequestUtil;
+import vn.quanlybanhang.util.SessionUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -23,13 +26,15 @@ import jakarta.servlet.http.HttpServletResponse;
         "/don-hang/create",
         "/don-hang/cancel",
         "/don-hang/view",
-        "/don-hang/pay"
+        "/don-hang/pay",
+        "/don-hang/in"
 })
 public class OrderController extends BaseController {
 
     private static final long serialVersionUID = 1L;
 
     private final OrderService orderService = new OrderService();
+    private final TransferQrService transferQrService = new TransferQrService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -42,6 +47,7 @@ public class OrderController extends BaseController {
                 case "/don-hang/cancel" -> showCancelPage(request, response);
                 case "/don-hang/view" -> showOrderDetail(request, response);
                 case "/don-hang/pay" -> showPayPage(request, response);
+                case "/don-hang/in" -> showPrintPage(request, response);
                 default -> response.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
         } catch (SQLException ex) {
@@ -129,8 +135,11 @@ public class OrderController extends BaseController {
         request.setAttribute("pageTitle", "Chi tiết đơn hàng");
         applyPageChrome(request, "fas fa-file-invoice", "Chi tiết món, size và nhóm lựa chọn.", null);
         request.setAttribute("order", order.get());
+        request.setAttribute("invoice", new vn.quanlybanhang.service.InvoiceService()
+                .latestInvoice(order.get().getId()).orElse(null));
         request.setAttribute("canPayOrder", orderService.canCompleteOrder(order.get().getTrangThai()));
         request.setAttribute("paymentOptions", orderService.getPaymentOptionsMap());
+        request.setAttribute("transferQr", transferQrService.forAmount(order.get().getMaDonHang(), order.get().getThanhTien()));
         render(request, response, "/WEB-INF/views/donhang/view.jsp");
     }
 
@@ -155,14 +164,31 @@ public class OrderController extends BaseController {
         request.setAttribute("order", order.get());
         request.setAttribute("paymentOptions", orderService.getPaymentOptionsMap());
         request.setAttribute("defaultPaymentMethod", orderService.getDefaultPaymentMethod());
+        request.setAttribute("transferQr", transferQrService.forAmount(order.get().getMaDonHang(), order.get().getThanhTien()));
         render(request, response, "/WEB-INF/views/donhang/pay.jsp");
+    }
+
+    private void showPrintPage(HttpServletRequest request, HttpServletResponse response)
+            throws SQLException, ServletException, IOException {
+        int id = getIntParameter(request, "id", 0);
+        Optional<DonHang> order = orderService.findOrderById(id);
+        if (order.isEmpty()) {
+            setFlash(request, "error", "Không tìm thấy đơn hàng.");
+            redirect(request, response, "/don-hang");
+            return;
+        }
+        request.setAttribute("order", order.get());
+        request.setAttribute("transferQr", transferQrService.forAmount(order.get().getMaDonHang(), order.get().getThanhTien()));
+        request.setAttribute("shopSettings", new SettingsService().getSettingsWithDefaults());
+        render(request, response, "/WEB-INF/views/donhang/print.jsp");
     }
 
     private void createOrder(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException {
         String action = request.getParameter("action");
         if ("create_multiple_orders".equals(action)) {
-            MultipleOrderResult result = orderService.processBatchCreate(request.getParameter("orders"));
+            MultipleOrderResult result = orderService.processBatchCreate(
+                    request.getParameter("orders"), SessionUtil.getCurrentUserId(request));
             respondCreateOrder(request, response, result.success(), result.message(), "/don-hang", result);
             return;
         }
@@ -172,7 +198,9 @@ public class OrderController extends BaseController {
                 request.getParameter("items"),
                 request.getParameter("ten_khachhang"),
                 request.getParameter("sdt_khachhang"),
-                request.getParameter("phuong_thuc_thanhtoan"));
+                request.getParameter("phuong_thuc_thanhtoan"),
+                SessionUtil.getCurrentUserId(request),
+                request.getParameter("ma_giam"));
         respondCreateOrder(request, response, result.success(), result.message(), result.redirectPath(), null);
     }
 
@@ -221,13 +249,19 @@ public class OrderController extends BaseController {
     private void completePendingOrder(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException {
         int id = getIntParameter(request, "id", 0);
-        Optional<String> error = orderService.completeOrderById(id, request.getParameter("phuong_thuc_thanhtoan"));
+        Optional<String> error = orderService.completeOrderById(
+                id, request.getParameter("phuong_thuc_thanhtoan"), SessionUtil.getCurrentUserId(request));
         if (error.isPresent()) {
             setFlash(request, "error", error.get());
             redirect(request, response, "/don-hang");
             return;
         }
         setFlash(request, "success", "Thanh toán thành công. Đơn hàng đã hoàn thành.");
+        String method = request.getParameter("phuong_thuc_thanhtoan");
+        if ("chuyen_khoan".equals(method)) {
+            redirect(request, response, "/don-hang/in?id=" + id);
+            return;
+        }
         redirect(request, response, "/don-hang/view?id=" + id);
     }
 }

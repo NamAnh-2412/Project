@@ -65,6 +65,27 @@
                             </div>
                         </c:if>
 
+                        <c:if test="${order.giamGia > 0}">
+                            <div class="order-pay-row">
+                                <span>Giảm ${order.maGiam}</span>
+                                <strong>-<fmt:formatNumber value="${order.giamGia}" pattern="#,##0" />đ</strong>
+                            </div>
+                        </c:if>
+
+                        <div id="transferQrBox" style="display:none;margin:12px 0;padding:12px;border:1px dashed #fdba74;border-radius:12px;text-align:center;">
+                            <c:choose>
+                                <c:when test="${transferQr.ready}">
+                                    <img src="${transferQr.imageUrl}" alt="QR chuyển khoản" style="width:200px;height:auto;">
+                                    <div>${transferQr.bankName} · ${transferQr.accountNumber}</div>
+                                    <div>${transferQr.accountName}</div>
+                                    <div>Nội dung: <b>${transferQr.content}</b></div>
+                                </c:when>
+                                <c:otherwise>
+                                    <p>${transferQr.hint}</p>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+
                         <form method="post" action="${pageContext.request.contextPath}/don-hang/pay?id=${order.id}" class="order-pay-form">
                             <label class="form-label required">Phương thức thanh toán</label>
                             <div class="order-pay-methods">
@@ -87,6 +108,21 @@
                     </div>
                 </div>
             </div>
+<script>
+    (function () {
+        var box = document.getElementById('transferQrBox');
+        function sync() {
+            var selected = document.querySelector('input[name="phuong_thuc_thanhtoan"]:checked');
+            if (box) {
+                box.style.display = selected && selected.value === 'chuyen_khoan' ? 'block' : 'none';
+            }
+        }
+        document.querySelectorAll('input[name="phuong_thuc_thanhtoan"]').forEach(function (input) {
+            input.addEventListener('change', sync);
+        });
+        sync();
+    })();
+</script>
 <%@ include file="/WEB-INF/views/layout/app-shell-end.jspf" %>
 </body>
 </html>

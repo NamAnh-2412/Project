@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+import vn.quanlybanhang.service.ImageFiles;
 import vn.quanlybanhang.service.LogoUploadService;
 import vn.quanlybanhang.service.SettingsService;
 import vn.quanlybanhang.util.JsonUtil;
@@ -23,7 +24,7 @@ import jakarta.servlet.http.Part;
         "/api/logo-upload",
         "/api/logo-delete"
 })
-@MultipartConfig
+@MultipartConfig(maxFileSize = ImageFiles.MAX_BYTES, maxRequestSize = ImageFiles.MAX_BYTES + 1_048_576L)
 public class SettingsController extends BaseController {
 
     private static final long serialVersionUID = 1L;
@@ -92,6 +93,15 @@ public class SettingsController extends BaseController {
             flashAndRedirect(request, response, "error", error.get());
             return;
         }
+        var bankError = settingsService.saveBankSettings(
+                paramOrEmpty(request, "bank_name"),
+                paramOrEmpty(request, "bank_bin"),
+                paramOrEmpty(request, "bank_account_number"),
+                paramOrEmpty(request, "bank_account_name"));
+        if (bankError.isPresent()) {
+            flashAndRedirect(request, response, "error", bankError.get());
+            return;
+        }
         flashAndRedirect(request, response, "success", "Đã lưu thông tin cửa hàng thành công.");
     }
 
@@ -143,9 +153,13 @@ public class SettingsController extends BaseController {
 
     private void uploadLogo(HttpServletRequest request, HttpServletResponse response)
             throws IOException, ServletException, SQLException {
-        Part part = request.getPart("logo");
-        Map<String, Object> result = logoUploadService.uploadLogo(part, request.getContextPath());
-        JsonUtil.writeJson(response, result);
+        try {
+            Part part = request.getPart("logo");
+            Map<String, Object> result = logoUploadService.uploadLogo(part, request.getContextPath());
+            JsonUtil.writeJson(response, result);
+        } catch (IllegalStateException ex) {
+            JsonUtil.writeJson(response, Map.of("success", false, "error", "Ảnh không được lớn hơn 5MB."));
+        }
     }
 
     private void deleteLogo(HttpServletResponse response) throws SQLException, IOException {

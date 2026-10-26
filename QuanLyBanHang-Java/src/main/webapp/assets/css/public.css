@@ -1,0 +1,21 @@
+/* Trang khách không dùng khung quản trị, cùng bảng màu với :root trong core.css */
+.guest-page { margin: 0; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; color: #1e293b; }
+.guest-page header, .guest-panel, .guest-cart { padding: 16px; }
+.guest-page header { background: #f97316; color: #fff; }
+.guest-page h1 { margin: 4px 0; font-size: 22px; }
+.guest-page button, .guest-page input, .guest-page select { font: inherit; }
+.guest-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.guest-card, .guest-cart { background: #fff; border-radius: 12px; padding: 12px; }
+.guest-card { border: 1px solid #e2e8f0; text-align: left; cursor: pointer; }
+.guest-cart { position: sticky; bottom: 0; box-shadow: 0 -4px 16px rgba(0,0,0,.06); }
+.guest-price { color: #f97316; font-weight: 700; }
+.guest-input { width: 100%; padding: 8px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; }
+.guest-send { width: 100%; padding: 12px; border: 0; border-radius: 10px; background: #f97316; color: #fff; cursor: pointer; }
+.guest-error { padding: 16px; }
+
+.cfd-page { margin: 0; min-height: 100vh; background: #2c3e50; color: #f8fafc; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+.cfd-main { display: grid; grid-template-columns: 1.2fr .8fr; gap: 24px; padding: 32px; }
+.cfd-main h1 { margin-top: 0; }
+.cfd-total { font-size: 42px; color: #f59e0b; }
+.cfd-main img { width: min(280px, 70vw); background: #fff; border-radius: 12px; }
+@media (max-width: 800px) { .cfd-main { grid-template-columns: 1fr; } }

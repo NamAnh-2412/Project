@@ -46,6 +46,10 @@ public class SettingsService {
         defaults.put("default_order_status", AppConstants.ORDER_STATUS_PENDING);
         defaults.put("default_payment_method", AppConstants.PAYMENT_CASH);
         defaults.put("allow_cancel_completed_order", "0");
+        defaults.put("bank_name", "");
+        defaults.put("bank_bin", "");
+        defaults.put("bank_account_number", "");
+        defaults.put("bank_account_name", "");
         DEFAULTS = Collections.unmodifiableMap(defaults);
     }
 
@@ -145,6 +149,23 @@ public class SettingsService {
         settingsDao.setSetting("so_dien_thoai", normalizeOptional(phone));
         settingsDao.setSetting("email", normalizeOptional(email));
         setShopLogoInitials(logoInitials);
+    }
+
+    public Optional<String> saveBankSettings(String bankName, String bankBin, String accountNumber, String accountName)
+            throws SQLException {
+        String number = normalizeOptional(accountNumber).replaceAll("\\s+", "");
+        String bin = normalizeOptional(bankBin);
+        if (!number.isBlank() && !number.chars().allMatch(Character::isDigit)) {
+            return Optional.of("Số tài khoản chỉ được gồm chữ số.");
+        }
+        if (!number.isBlank() && bin.isBlank()) {
+            return Optional.of("Hãy chọn ngân hàng khi nhập số tài khoản.");
+        }
+        settingsDao.setSetting("bank_name", normalizeOptional(bankName));
+        settingsDao.setSetting("bank_bin", bin);
+        settingsDao.setSetting("bank_account_number", number);
+        settingsDao.setSetting("bank_account_name", normalizeOptional(accountName));
+        return Optional.empty();
     }
 
     public String validateShopInfo(String shopName, String address, String phone, String email) {

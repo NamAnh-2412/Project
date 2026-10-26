@@ -3,8 +3,9 @@ package vn.quanlybanhang.dao;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import vn.quanlybanhang.config.SchemaCache;
 
 /**
  * Ghi log audit tùy chọn (bảng có thể chưa tồn tại trên DB cũ).
@@ -12,14 +13,7 @@ import java.sql.SQLException;
 public class AuditDao extends BaseDao {
 
     public boolean tableExists(String tableName) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?";
-        try (Connection connection = getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, tableName);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                return resultSet.next() && resultSet.getInt(1) > 0;
-            }
-        }
+        return SchemaCache.tableExists(tableName);
     }
 
     public void logImportHistory(Connection connection, Integer employeeId, int materialId, BigDecimal quantity)

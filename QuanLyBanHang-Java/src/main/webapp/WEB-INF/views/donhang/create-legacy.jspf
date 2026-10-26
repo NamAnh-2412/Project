@@ -138,9 +138,21 @@
             </div>
             <div class="payment-right">
                 <div class="payment-info">
+                    <div class="payment-row" id="suggestBox" style="color:#059669;"></div>
                     <div class="payment-row">
                         <span>Tổng tiền (1)</span>
                         <strong id="paymentTotal" style="color:#f44336;">0₫</strong>
+                    </div>
+                    <div class="payment-row" id="voucherRow">
+                        <label>Mã giảm giá</label>
+                        <span style="display:flex;gap:8px;">
+                            <input type="text" id="voucherCode" maxlength="40" style="padding:8px;border:1px solid #d2d8ea;border-radius:6px;width:140px;">
+                            <button type="button" class="btn btn-secondary" onclick="orderCreate.applyVoucher()">Áp dụng</button>
+                        </span>
+                    </div>
+                    <div class="payment-row" id="voucherDiscountRow" style="display:none;">
+                        <span>Giảm</span>
+                        <strong id="voucherDiscount" style="color:#16a34a;">0₫</strong>
                     </div>
                     <div class="payment-row" id="customerPaidRow" style="display:none;">
                         <label>Khách trả *</label>
@@ -221,3 +233,6 @@
   window.SHOP_NAME = '${shopName}';
 </script>
 <script src="${pageContext.request.contextPath}/js/orders/create.js"></script>
+<script src="${pageContext.request.contextPath}/js/orders/create-cart.js"></script>
+<script src="${pageContext.request.contextPath}/js/orders/create-payment.js"></script>
+<script src="${pageContext.request.contextPath}/js/orders/create-submit.js"></script>

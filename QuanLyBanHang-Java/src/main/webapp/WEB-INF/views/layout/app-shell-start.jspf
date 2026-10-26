@@ -1,5 +1,9 @@
 <%@ page pageEncoding="UTF-8" %>
 <div class="app-wrapper">
+    <button type="button" class="menu-toggle" aria-label="Mở menu" aria-expanded="false" aria-controls="app-sidebar">
+        <i class="fas fa-bars" aria-hidden="true"></i>
+    </button>
+    <div class="sidebar-backdrop" aria-hidden="true"></div>
     <%@ include file="/WEB-INF/views/layout/sidebar.jspf" %>
     <div class="main-content">
         <div class="main-inner">

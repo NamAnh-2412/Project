@@ -1,0 +1,121 @@
+/* ===== jsp-bridge.css ===== */
+/**
+ * Bridge: JSP dung .app-shell + main.content (sidebar PHP co position:fixed).
+ * Dam bao vung noi dung thut vao 250px giong layout PHP.
+ */
+.app-shell {
+  min-height: 100vh;
+  display: block;
+}
+
+.app-shell > main.content {
+  margin-left: 250px;
+  width: calc(100% - 250px);
+  max-width: calc(100% - 250px);
+  min-height: 100vh;
+  background: #f8fafc;
+  box-sizing: border-box;
+  padding: 0 0 32px;
+  overflow-x: hidden;
+}
+
+/* Tieu de trang (tru man create-order dung .header-bar-taodon) */
+.app-shell .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  padding: 20px 8px 0 8px;
+}
+
+.app-shell .header h1 {
+  font-size: 2rem;
+  color: #22334b;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.app-shell .header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 15px;
+}
+
+/* Card / bang — can chinh voi content-card PHP */
+.app-shell .card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.07);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+
+.app-shell .table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.app-shell .table th,
+.app-shell .table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.app-shell .table th {
+  background: #f9fafb;
+}
+
+/* Nut .button JSP gan gradient cam PHP */
+.app-shell .button:not(.secondary):not(.danger),
+.app-shell button:not(.secondary):not(.danger):not(.theme-toggle) {
+  background: linear-gradient(90deg, #f97316, #fb923c);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 7px rgba(250, 151, 3, 0.13);
+}
+
+.app-shell .button.secondary,
+.app-shell button.secondary {
+  background: #eaeaea;
+  color: #22334b;
+}
+
+.app-shell .button.danger,
+.app-shell button.danger {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* Flash */
+.app-shell .status {
+  margin: 0 8px 18px 8px;
+  padding: 12px 16px;
+  border-radius: 10px;
+}
+
+.app-shell .status.success {
+  background: #ecfdf5;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.app-shell .status.error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+@media (max-width: 960px) {
+  .app-shell > main.content {
+    margin-left: 0;
+    width: 100%;
+    max-width: 100%;
+    padding-top: 12px;
+  }
+}
+
+

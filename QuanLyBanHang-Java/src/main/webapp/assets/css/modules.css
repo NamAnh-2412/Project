@@ -1,0 +1,31 @@
+/* Trang bàn, bếp, dự báo, chi nhánh, mở rộng */
+.section-gap { margin-bottom: 16px; }
+.heading-gap { margin-top: 18px; }
+.toolbar-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.toolbar-form input,
+.toolbar-form select {
+  padding: 8px;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  background: var(--bg-white);
+  color: var(--text-dark);
+  font: inherit;
+}
+.toolbar-form input[name="so_cho"] { width: 90px; }
+.field-grid { display: grid; gap: 10px; max-width: 560px; }
+.field-grid label { display: block; }
+.field-grid .form-control { display: block; width: 100%; margin-bottom: 0; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.floor-card { border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px; }
+.muted { color: var(--text-light); }
+.break-link { word-break: break-all; font-size: 12px; }
+.ticket-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.item-block { margin: 8px 0; }
+.item-done { opacity: .45; text-decoration: line-through; }
+.choice-note { color: var(--text-light); }
+.button-row { display: flex; gap: 8px; }
+.report-text { white-space: pre-wrap; font-family: inherit; }
+.page-subtitle { margin: -12px 0 20px 32px; color: var(--text-light); font-size: 15px; }
+
+
+
